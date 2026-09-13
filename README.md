@@ -4,6 +4,8 @@ Browser version of the Particle Digital Twin: a real-time interactive demonstrat
 
 **https://kailiu7777.github.io/particle-digital-twin-web/**
 
+<img src="qr.png" alt="QR code for the site" width="320">
+
 It is a simple demonstration for trial, not the qualified desktop application, and it does not claim that particle-resolved DNS runs in real time.
 
 ## Using it
