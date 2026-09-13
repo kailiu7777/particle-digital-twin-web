@@ -1,0 +1,43 @@
+{
+  "generated": "2026-08-10T15:44:44",
+  "seed": 20260809,
+  "onnx_path": "/home/kliu28/Research/2024_UTK/modulus20240821/modulus2407/my_workspace/gesture_demo/model_preparation/one_particle_inference_01/flow_network.onnx",
+  "onnx_md5": "0596a7c172802bd3face41f3b17a219b",
+  "provider": "CUDAExecutionProvider",
+  "regime": {
+    "D": 1.0,
+    "nu": 0.1,
+    "rho_f": 1.0,
+    "rho_p": 2.0,
+    "mu": 0.1,
+    "U_macro": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "g_net_hover": 1.625,
+    "fd_eps": 0.01,
+    "domain": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "m_p": 1.0471975511965976,
+    "I_p": 0.10471975511965977,
+    "dt": 0.016666666666666666
+  },
+  "quadrature": {
+    "rule": "LEBEDEV_26",
+    "n_points": 26,
+    "weights_exact": [
+      "1/21 (x6)",
+      "4/105 (x12)",
+      "9/280 (x8)"
+    ]
+  },
+  "contract": {
+    "Re_min": 1.0,
+    "Re_max": 300.0,
+    "omega_max": 3.0
+  }
+}
