@@ -4,23 +4,50 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#15161C">
+<script>
+(function () {
+  var t = 'dark';
+  try { var s = localStorage.getItem('pdt-theme'); if (s === 'light' || s === 'dark') { t = s; } } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.querySelector('meta[name=theme-color]');
+  if (m) { m.setAttribute('content', t === 'light' ? '#F3F1EC' : '#15161C'); }
+})();
+</script>
 <title>Compositional AI Digital Twin</title>
 <link rel="icon" href="full/TemplateData/favicon.ico">
 <style>
   :root {
-    --bg: #000; --panel: #000; --line: #2e2e2e; --line2: #4a4a4a;
-    --ink: #f4f4f4; --dim: #8c8c8c; --accent: #fff; --warn: #fff; --bad: #fff; --ok: #fff;
+    --bg: #15161C; --fg: #F3F1EC;
+    --fg-strong: rgba(243,241,236,.96); --fg-normal: rgba(243,241,236,.78); --fg-dim: rgba(243,241,236,.58);
+    --line-soft: rgba(243,241,236,.15); --line-strong: rgba(243,241,236,.40);
+    --surface: rgba(243,241,236,.025); --surface-hover: rgba(243,241,236,.055);
+    --modal-bg: rgba(21,22,28,.95); --sheet-bg: rgba(21,22,28,.88); --ctl-bg: rgba(21,22,28,.82);
+    --viewport-bg: #15161C;
+    --on-canvas-fg: rgba(243,241,236,.96); --on-canvas-dim: rgba(243,241,236,.58);
+    --panel: var(--surface); --line: var(--line-soft); --line2: var(--line-strong);
+    --ink: var(--fg-strong); --dim: var(--fg-dim);
+    --accent: var(--fg); --warn: var(--fg); --bad: var(--fg); --ok: var(--fg);
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px);
     --st: env(safe-area-inset-top, 0px);  --sb: env(safe-area-inset-bottom, 0px);
   }
+  :root[data-theme="light"] {
+    --bg: #F3F1EC; --fg: #15161C;
+    --fg-strong: rgba(21,22,28,.96); --fg-normal: rgba(21,22,28,.78); --fg-dim: rgba(21,22,28,.58);
+    --line-soft: rgba(21,22,28,.15); --line-strong: rgba(21,22,28,.40);
+    --surface: rgba(21,22,28,.025); --surface-hover: rgba(21,22,28,.055);
+    --modal-bg: rgba(243,241,236,.95); --sheet-bg: rgba(243,241,236,.88); --ctl-bg: rgba(243,241,236,.82);
+    --panel: var(--surface); --line: var(--line-soft); --line2: var(--line-strong);
+    --ink: var(--fg-strong); --dim: var(--fg-dim);
+    --accent: var(--fg); --warn: var(--fg); --bad: var(--fg); --ok: var(--fg);
+  }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
     font: 15px/1.55 -apple-system, "Segoe UI", "Helvetica Neue", Roboto, Helvetica, Arial, sans-serif; }
-  #stage { position: fixed; inset: 0; display: none; background: #000; }
+  #stage { position: fixed; inset: 0; display: none; background: var(--viewport-bg); }
   #stage.on { display: block; }
-  #unity-canvas { width: 100%; height: 100%; display: block; background: #000; }
+  #unity-canvas { width: 100%; height: 100%; display: block; background: var(--viewport-bg); }
   .wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 72px; }
   h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
   h2 { font-size: 17px; margin: 34px 0 10px; }
@@ -31,7 +58,7 @@
   button, .btn { font: inherit; font-weight: 500; padding: 11px 18px; border-radius: 2px;
     border: 1px solid var(--line2); background: transparent; color: var(--ink); cursor: pointer;
     text-decoration: none; display: inline-block; }
-  button.primary { background: var(--ink); border-color: var(--ink); color: #000; }
+  button.primary { background: var(--fg); border-color: var(--fg); color: var(--bg); }
   .muted { color: var(--dim); font-size: 13.5px; }
   details { margin-top: 14px; }
   summary { cursor: pointer; color: var(--dim); }
@@ -52,11 +79,11 @@
   #lc-load .bar { width: min(320px, 70vw); }
   #lc-title { position: fixed; z-index: 6; display: none; pointer-events: none;
     left: calc(var(--sl) + 14px); top: calc(var(--st) + 12px); font: 11px/1.5 var(--mono);
-    letter-spacing: .10em; text-transform: uppercase; color: var(--dim); }
+    letter-spacing: .10em; text-transform: uppercase; color: var(--on-canvas-dim); }
   #lc-title.on { display: block; }
-  #lc-title b { color: var(--ink); font-weight: 500; }
+  #lc-title b { color: var(--on-canvas-fg); font-weight: 500; }
   #lc-status { color: var(--dim); }
-  #lc-sheet { position: fixed; z-index: 7; display: none; background: rgba(0,0,0,.62);
+  #lc-sheet { position: fixed; z-index: 7; display: none; background: var(--sheet-bg);
     border: 1px solid var(--line2); color: var(--ink); overflow: hidden; }
   #lc-sheet.on { display: flex; flex-direction: column; }
   #lc-sheet .hdr { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-height: 44px;
@@ -71,7 +98,7 @@
   .seg button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 8px 6px; min-height: 44px;
     font-size: 13px; color: var(--dim); border-right: 1px solid var(--line); }
   .seg button:last-child { border-right: 0; }
-  .seg button.sel { color: #000; background: var(--ink); }
+  .seg button.sel { color: var(--bg); background: var(--fg); }
   .btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
   .btns button { min-height: 44px; padding: 8px 6px; font-size: 13px; }
   .note { font: 11px/1.5 var(--mono); color: var(--dim); margin: 6px 1px 0; min-height: 16px; }
@@ -90,9 +117,9 @@
   #lc-spin { position: fixed; z-index: 7; display: none; gap: 10px; flex-direction: column; }
   #lc-spin.on { display: flex; }
   #lc-spin button { width: 54px; height: 54px; border-radius: 27px; padding: 0; font-size: 24px; line-height: 1;
-    background: rgba(0,0,0,.6); border: 1px solid var(--line2); color: var(--ink); touch-action: none;
+    background: var(--ctl-bg); border: 1px solid var(--line2); color: var(--ink); touch-action: none;
     -webkit-tap-highlight-color: transparent; }
-  #lc-spin button.active { background: var(--ink); color: #000; border-color: var(--ink); }
+  #lc-spin button.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
   #lc-spin button.dim { opacity: .35; }
   body.live.portrait #lc-spin { left: calc(var(--sl) + 10px); bottom: calc(var(--sb) + 70px); }
   body.live.portrait.sheet-open #lc-spin, body.live.portrait.guide-open #lc-spin { display: none; }
@@ -101,7 +128,7 @@
   #lc-guide.on { display: flex; }
   #lc-guide .gd { width: min(400px, 100%); max-height: calc(100% - var(--st) - var(--sb) - 16px); overflow-y: auto;
     -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
-    background: rgba(0,0,0,.62); border: 1px solid var(--line2); padding: 8px 12px 10px; }
+    background: var(--sheet-bg); border: 1px solid var(--line2); padding: 8px 12px 10px; }
   body.live.landscape #lc-guide { padding: 8px 16px; }
   body.live.landscape #lc-guide img { width: 32px; height: 48px; flex-basis: 32px; }
   body.live.landscape #lc-guide .grow { padding: 3px 0; }
@@ -119,25 +146,45 @@
   #lc-guide .grow i { display: block; font: 10px/1.4 var(--mono); font-style: normal; color: var(--dim); }
   #lc-close { position: fixed; z-index: 11; display: none; top: calc(var(--st) + 6px); right: calc(var(--sr) + 8px);
     width: 34px; height: 34px; border-radius: 17px; padding: 0; font-size: 18px; line-height: 1; font-weight: 300;
-    background: rgba(0,0,0,.6); border: 1px solid var(--line2); color: var(--ink); -webkit-tap-highlight-color: transparent; }
+    background: var(--ctl-bg); border: 1px solid var(--line2); color: var(--ink); -webkit-tap-highlight-color: transparent; }
   #lc-close.on { display: block; }
+  #lc-theme { position: fixed; z-index: 11; display: none; top: calc(var(--st) + 6px); right: calc(var(--sr) + 50px);
+    height: 34px; border: 1px solid var(--line2); border-radius: 17px; overflow: hidden; background: var(--ctl-bg); }
+  #lc-theme.on { display: flex; }
+  #lc-theme button { width: 42px; height: 100%; min-height: 0; padding: 0; margin: 0; border: 0; border-radius: 0;
+    background: transparent; color: var(--dim); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #lc-theme button + button { border-left: 1px solid var(--line2); }
+  #lc-theme button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  #lc-theme svg { display: block; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   body.live.landscape #lc-sheet { top: calc(var(--st) + 48px); }
   #lc-cam { position: fixed; z-index: 9; display: none; left: 50%; transform: translateX(-50%);
-    top: calc(var(--st) + 44px); width: min(380px, calc(100vw - 24px)); background: rgba(0,0,0,.94);
+    top: calc(var(--st) + 44px); width: min(380px, calc(100vw - 24px)); background: var(--modal-bg);
     border: 1px solid var(--line2); border-radius: 2px; padding: 12px 14px; }
   #lc-cam.on { display: block; }
   #lc-cam .row { margin-top: 10px; }
   #lc-cam button { min-height: 44px; }
   #lc-toast { position: fixed; z-index: 9; display: none; left: 50%; transform: translateX(-50%);
-    top: calc(var(--st) + 44px); max-width: calc(100vw - 24px); background: rgba(0,0,0,.94);
+    top: calc(var(--st) + 44px); max-width: calc(100vw - 24px); background: var(--modal-bg);
     border: 1px solid var(--line2); border-radius: 2px; padding: 8px 12px; font: 12px/1.5 var(--mono); }
   #lc-toast.on { display: block; }
+  #lc-exit { position: fixed; z-index: 12; display: none; left: 50%; transform: translateX(-50%);
+    top: calc(var(--st) + 44px); width: min(340px, calc(100vw - 24px)); background: var(--modal-bg);
+    border: 1px solid var(--line-strong); border-radius: 2px; padding: 14px 16px 12px; }
+  #lc-exit.on { display: block; }
+  #lc-exit .t { font-weight: 600; color: var(--fg-strong); }
+  #lc-exit .s { margin-top: 4px; font: 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-dim); }
+  #lc-exit .opt { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; color: var(--fg-strong); cursor: pointer; }
+  #lc-exit .opt input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--fg); }
+  #lc-exit .row { margin-top: 10px; }
+  #lc-exit .row button { width: 100%; }
   .hc { position: fixed; z-index: 8; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; border-radius: 9px;
-    border: 1.5px solid rgba(255,255,255,.95); pointer-events: none; display: none; left: 0; top: 0; }
+    border: 1.5px solid rgba(243,241,236,.95); pointer-events: none; display: none; left: 0; top: 0; }
   .hc.l { border-style: dashed; }
-  .hc.pinch { background: rgba(255,255,255,.35); }
-  .hc.grab { background: rgba(255,255,255,.9); }
-  .hc.orbit { background: rgba(255,255,255,.55); }
+  .hc.pinch { background: rgba(243,241,236,.35); }
+  .hc.grab { background: rgba(243,241,236,.9); }
+  .hc.orbit { background: rgba(243,241,236,.55); }
 </style>
 </head>
 <body>
@@ -146,7 +193,10 @@
   <div class="muted" id="lc-load-msg" style="font: 11px/1.5 var(--mono); letter-spacing:.08em">Loading the live simulation&#8230;</div>
   <div class="bar"><i id="lc-bar"></i></div></div>
 <div id="lc-title"><b>Compositional AI Digital Twin</b> &nbsp;/&nbsp; live<br><span id="lc-status"></span></div>
-<button id="lc-close" aria-label="close">&#10005;</button>
+<div id="lc-theme" role="group" aria-label="Appearance">
+  <button id="lc-theme-light" aria-pressed="false"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.6 12H2.4M21.6 12h-2.2M6.4 6.4 4.8 4.8M19.2 19.2l-1.6-1.6M17.6 6.4l1.6-1.6M4.8 19.2l1.6-1.6"/></svg><span class="vh">Light appearance</span></button>
+  <button id="lc-theme-dark" aria-pressed="true"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4.2a7.8 7.8 0 0 0 0 15.6z" fill="currentColor"/></svg><span class="vh">Dark appearance</span></button>
+</div><button id="lc-close" aria-label="close">&#10005;</button>
 <div id="lc-spin">
   <button id="lc-add" data-ui="0" aria-label="add a particle">+</button>
   <button id="lc-del" data-ui="1" aria-label="remove half of the particles">&minus;</button>
@@ -177,7 +227,15 @@
     device. Touch always keeps working.</div>
   <div class="row"><button class="primary" id="lc-cam-yes">Enable camera</button><button id="lc-cam-no">Touch only</button></div>
 </div>
-<div id="lc-toast"></div>
+<div id="lc-exit" role="dialog" aria-modal="true" aria-labelledby="lc-exit-t">
+  <div class="t" id="lc-exit-t">Any issues?</div>
+  <div class="s">Select any.</div>
+  <label class="opt"><input type="checkbox" data-issue="flow_unclear">Flow unclear</label>
+  <label class="opt"><input type="checkbox" data-issue="performance">Feels slow</label>
+  <label class="opt"><input type="checkbox" data-issue="gestures">Gestures unreliable</label>
+  <label class="opt"><input type="checkbox" data-issue="usefulness">Not useful to me</label>
+  <div class="row"><button class="primary" id="lc-exit-go">Exit</button></div>
+</div><div id="lc-toast"></div>
 <div id="lc-lost" class="card" style="position:fixed;z-index:12;display:none;left:50%;top:40%;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 24px))">
   <div style="font-weight:600">The graphics context was lost</div>
   <div class="muted" style="margin-top:4px">The browser reclaimed the GPU (for example under memory pressure or after the app was backgrounded). Copy the report first if you are testing, then reload.</div>
@@ -228,11 +286,18 @@
       </div>
     </div>
   </noscript>
+  <p class="muted" style="margin-top:28px; font-size:12.5px">Anonymous aggregate usage and optional
+    exit-issue counts help improve this demo. No cookies, persistent identifiers, camera frames,
+    hand data or precise location are collected.</p>
 </div>
 <script>
-var PDT_ROUTER_VERSION = 'p28d2c-edfce09-pages';
-var LC_RELEASE = 'ml-edfce09-pages';
+var PDT_ROUTER_VERSION = 'p28d2c-optd-ui4-32c5587';
+var LC_RELEASE = 'ml-opt-d-ui4-32c5587';
 var LC_BUILD = 'live/' + LC_RELEASE + '/Build/';
+// Aggregate-only usage counters. Empty string = analytics disabled, which is the state
+// shipped until the Worker is deployed. Setting this to the Worker URL is the only change
+// needed to turn it on; nothing else in the page depends on it.
+var PDT_ANALYTICS_URL = 'https://pdt-feedback.pdt-feedback-worker.workers.dev';
 var LC_NAME = 'pdt-lite';
 var LC_EXT = '.unityweb';
 var LITE_ONLY = 'yes' === 'yes';
@@ -493,13 +558,76 @@ window.__liteOnEvent = function (ev) {
     if (b) { if (p[2] === '1') flash(b); else b.classList.remove('active'); }
   }
 };
-function closePage() {
+// Fire-and-forget. Never awaited, never retried, never surfaced: a failure here must not
+// block Exit, block startup, show anything to the visitor, or touch the simulation.
+function pdtSend(payload) {
+  if (!PDT_ANALYTICS_URL) { return; }
+  try {
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    if (ctl) { setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 2000); }
+    fetch(PDT_ANALYTICS_URL, {
+      method: 'POST', mode: 'cors', keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctl ? ctl.signal : undefined
+    }).then(function () {}, function () {});
+  } catch (e) {}
+}
+// The exit panel builds a richer local event; the aggregate service is only allowed the
+// release and the issue codes, so everything else is dropped here rather than transmitted.
+window.pdtAnalyticsSink = function (ev) {
+  try { pdtSend({ type: 'exit_feedback', release: ev.release, issues: ev.issues || [] }); } catch (e) {}
+};
+var pdtVisitSent = false;
+function pdtVisit() {
+  if (pdtVisitSent) { return; }
+  pdtVisitSent = true;
+  pdtSend({ type: 'visit', release: LC_RELEASE });
+}function themePref() {
+  try { var t = localStorage.getItem('pdt-theme'); if (t === 'light' || t === 'dark') { return t; } } catch (e) {}
+  return 'dark';
+}
+function applyTheme(t) {
+  t = (t === 'light') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.querySelector('meta[name=theme-color]');
+  if (m) { m.setAttribute('content', t === 'light' ? '#F3F1EC' : '#15161C'); }
+  var L = document.getElementById('lc-theme-light'), D = document.getElementById('lc-theme-dark');
+  if (L && D) { L.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+                D.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false'); }
+}
+function setTheme(t) { try { localStorage.setItem('pdt-theme', t); } catch (e) {} applyTheme(t); }var exitInfo = { handUsed: false, maxNp: 0 };
+setInterval(function () {
+  try { if (hand && hand.on) exitInfo.handUsed = true; } catch (e) {}
+  try { var u = diag.unity; if (u && u.maxNp) exitInfo.maxNp = Math.max(exitInfo.maxNp, u.maxNp); } catch (e) {}
+}, 2000);
+function exitDurationBucket(ms) {
+  var s = ms / 1000;
+  if (s < 30) return 'lt_30s';
+  if (s < 60) return '30s_1m';
+  if (s < 180) return '1m_3m';
+  if (s < 600) return '3m_10m';
+  return 'gt_10m';
+}
+window.__pdtExitEvents = [];
+function recordExitFeedback(issues) {
+  var ev = { type: 'exit_feedback', release: LC_RELEASE,
+             sessionDurationBucket: exitDurationBucket(performance.now() - (diag.startedAt || 0)),
+             handControlUsed: !!exitInfo.handUsed,
+             maxParticleSetting: exitInfo.maxNp || null,
+             issues: issues };
+  window.__pdtExitEvents.push(ev);
+  try { console.log('[EXIT-FEEDBACK] ' + JSON.stringify(ev)); } catch (e) {}
+  try { if (typeof window.pdtAnalyticsSink === 'function') window.pdtAnalyticsSink(ev); } catch (e) {}
+  return ev;
+}
+function showExitPanel(on) { el('lc-exit').classList.toggle('on', !!on); }function closePage() {
   try { if (hand.mod) hand.mod.stop(); } catch (e) {}
   try { if (unityInst && unityInst.Quit) unityInst.Quit(); } catch (e) {}
   try { window.close(); } catch (e) {}
   setTimeout(function () {
     document.body.classList.remove('live', 'portrait', 'landscape');
-    ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide'].forEach(function (id) { el(id).classList.remove('on'); });
+    ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
     ['hc-r', 'hc-l'].forEach(function (id) { var c = el('lc-' + id); if (c) c.style.display = 'none'; });
     try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
     el('ui').style.display = '';
@@ -511,6 +639,7 @@ function closePage() {
 }
 function liveReady() {
   diag.readyAt = performance.now();
+  pdtVisit();   // visits = successful live-demo launches, not unique people
   el('lc-load').classList.remove('on');
   el('lc-sheet').classList.add('on');
   el('lc-title').classList.add('on');
@@ -550,7 +679,19 @@ function liveReady() {
   requestAnimationFrame(sendUiRects);
   setTimeout(sendUiRects, 500);
   el('lc-close').classList.add('on');
-  el('lc-close').addEventListener('click', closePage);
+  el('lc-theme').classList.add('on');
+  el('lc-theme-light').addEventListener('click', function () { setTheme('light'); });
+  el('lc-theme-dark').addEventListener('click', function () { setTheme('dark'); });
+  el('lc-close').addEventListener('click', function () { showExitPanel(true); });
+  el('lc-exit-go').addEventListener('click', function () {
+    var issues = [];
+    Array.prototype.forEach.call(el('lc-exit').querySelectorAll('input[type=checkbox]'), function (c) {
+      if (c.checked) { issues.push(c.getAttribute('data-issue')); }
+    });
+    recordExitFeedback(issues);
+    showExitPanel(false);
+    closePage();
+  });
   el('lc-cam-yes').addEventListener('click', function () { el('lc-cam').classList.remove('on'); setHand(true); });
   el('lc-cam-no').addEventListener('click', function () { el('lc-cam').classList.remove('on'); hand.asked = true; setHand(false); toast('Touch control'); });
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) el('lc-cam').classList.add('on');
@@ -662,6 +803,7 @@ function snapshot() {
   };
 }
 window.__liteSnapshot = snapshot;
+applyTheme(themePref());
 var unityInst = null;
 function demote(reason) {
   state.reason = reason;
@@ -671,7 +813,7 @@ function demote(reason) {
   try { if (unityInst && unityInst.Quit) { unityInst.Quit(); } } catch (e) {}
   try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
   document.body.classList.remove('live', 'portrait', 'landscape');
-  ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide'].forEach(function (id) { el(id).classList.remove('on'); });
+  ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
   el('ui').style.display = '';
   render();
 }
@@ -685,7 +827,7 @@ function render() {
       '<h2 style="margin-top:10px">Interactive playback</h2>' +
       '<p class="muted">This plays back <strong>recorded output of the same qualified solver</strong> - real trajectories ' +
       'and a real tracer field. It is not a live simulation.</p>' +
-      '<div class="row"><a class="btn" style="background:var(--accent);border-color:var(--accent);color:#06121d" href="fallback/index.html">Open the playback</a>' +
+      '<div class="row"><a class="btn" style="background:var(--accent);border-color:var(--accent);color:var(--bg)" href="fallback/index.html">Open the playback</a>' +
       '<a class="btn" href="fallback/about.html">What is this?</a></div></div>' +
       '<details><summary>Technical detail</summary><p class="muted">Reason: ' + esc(state.reason) + '<br>' +
       'WebGL2 available: ' + state.webgl2 + '</p></details>';
