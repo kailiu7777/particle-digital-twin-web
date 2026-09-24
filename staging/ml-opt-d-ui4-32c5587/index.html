@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#15161C">
+<script>
+(function () {
+  var t = 'dark';
+  try { var s = localStorage.getItem('pdt-theme'); if (s === 'light' || s === 'dark') { t = s; } } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.querySelector('meta[name=theme-color]');
+  if (m) { m.setAttribute('content', t === 'light' ? '#F3F1EC' : '#15161C'); }
+})();
+</script>
+<title>Compositional AI Digital Twin</title>
+<link rel="icon" href="full/TemplateData/favicon.ico">
+<style>
+  :root {
+    --bg: #15161C; --fg: #F3F1EC;
+    --fg-strong: rgba(243,241,236,.96); --fg-normal: rgba(243,241,236,.78); --fg-dim: rgba(243,241,236,.58);
+    --line-soft: rgba(243,241,236,.15); --line-strong: rgba(243,241,236,.40);
+    --surface: rgba(243,241,236,.025); --surface-hover: rgba(243,241,236,.055);
+    --modal-bg: rgba(21,22,28,.95); --sheet-bg: rgba(21,22,28,.88); --ctl-bg: rgba(21,22,28,.82);
+    --viewport-bg: #15161C;
+    --on-canvas-fg: rgba(243,241,236,.96); --on-canvas-dim: rgba(243,241,236,.58);
+    --panel: var(--surface); --line: var(--line-soft); --line2: var(--line-strong);
+    --ink: var(--fg-strong); --dim: var(--fg-dim);
+    --accent: var(--fg); --warn: var(--fg); --bad: var(--fg); --ok: var(--fg);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px);
+    --st: env(safe-area-inset-top, 0px);  --sb: env(safe-area-inset-bottom, 0px);
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F1EC; --fg: #15161C;
+    --fg-strong: rgba(21,22,28,.96); --fg-normal: rgba(21,22,28,.78); --fg-dim: rgba(21,22,28,.58);
+    --line-soft: rgba(21,22,28,.15); --line-strong: rgba(21,22,28,.40);
+    --surface: rgba(21,22,28,.025); --surface-hover: rgba(21,22,28,.055);
+    --modal-bg: rgba(243,241,236,.95); --sheet-bg: rgba(243,241,236,.88); --ctl-bg: rgba(243,241,236,.82);
+    --panel: var(--surface); --line: var(--line-soft); --line2: var(--line-strong);
+    --ink: var(--fg-strong); --dim: var(--fg-dim);
+    --accent: var(--fg); --warn: var(--fg); --bad: var(--fg); --ok: var(--fg);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, "Segoe UI", "Helvetica Neue", Roboto, Helvetica, Arial, sans-serif; }
+  #stage { position: fixed; inset: 0; display: none; background: var(--viewport-bg); }
+  #stage.on { display: block; }
+  #unity-canvas { width: 100%; height: 100%; display: block; background: var(--viewport-bg); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 72px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 17px; margin: 34px 0 10px; }
+  .sub { color: var(--dim); margin: 0 0 26px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 2px;
+    padding: 18px 20px; margin: 16px 0; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  button, .btn { font: inherit; font-weight: 500; padding: 11px 18px; border-radius: 2px;
+    border: 1px solid var(--line2); background: transparent; color: var(--ink); cursor: pointer;
+    text-decoration: none; display: inline-block; }
+  button.primary { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+  .muted { color: var(--dim); font-size: 13.5px; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--dim); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin-top: 10px; }
+  td, th { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; }
+  code { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .bar { height: 1px; background: var(--line); overflow: hidden; margin-top: 18px; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .25s; }
+  .tag { display: inline-block; font: 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--dim); border: 1px solid var(--line2); border-radius: 2px; padding: 2px 7px; }
+  body.live { overflow: hidden; position: fixed; inset: 0; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  body.live #unity-canvas { touch-action: none; }
+  #lc-load { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; background: var(--bg); z-index: 5; text-align: center; padding: 24px; }
+  #lc-load.on { display: flex; }
+  #lc-load .bar { width: min(320px, 70vw); }
+  #lc-title { position: fixed; z-index: 6; display: none; pointer-events: none;
+    left: calc(var(--sl) + 14px); top: calc(var(--st) + 12px); font: 11px/1.5 var(--mono);
+    letter-spacing: .10em; text-transform: uppercase; color: var(--on-canvas-dim); }
+  #lc-title.on { display: block; }
+  #lc-title b { color: var(--on-canvas-fg); font-weight: 500; }
+  #lc-status { color: var(--dim); }
+  #lc-sheet { position: fixed; z-index: 7; display: none; background: var(--sheet-bg);
+    border: 1px solid var(--line2); color: var(--ink); overflow: hidden; }
+  #lc-sheet.on { display: flex; flex-direction: column; }
+  #lc-sheet .hdr { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-height: 44px;
+    border-bottom: 1px solid var(--line); cursor: pointer; }
+  #lc-sheet .hdr .grab { width: 28px; height: 1px; background: var(--line2); margin: 0 auto; }
+  #lc-sheet .hdr .t { font: 11px/1.4 var(--mono); letter-spacing: .10em; text-transform: uppercase; color: var(--dim); flex: 1; }
+  #lc-sheet .hdr .chev { font-size: 12px; color: var(--dim); padding: 0 6px; }
+  #lc-sheet .body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 12px 12px; }
+  .sec { margin: 10px 0 12px; }
+  .sec .k { font: 10px/1.4 var(--mono); letter-spacing: .10em; text-transform: uppercase; color: var(--dim); margin: 0 0 6px 1px; }
+  .seg { display: flex; background: transparent; border: 1px solid var(--line2); border-radius: 2px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 8px 6px; min-height: 44px;
+    font-size: 13px; color: var(--dim); border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; }
+  .seg button.sel { color: var(--bg); background: var(--fg); }
+  .btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+  .btns button { min-height: 44px; padding: 8px 6px; font-size: 13px; }
+  .note { font: 11px/1.5 var(--mono); color: var(--dim); margin: 6px 1px 0; min-height: 16px; }
+  input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--ink); }
+  .adv summary { font: 11px/1.4 var(--mono); letter-spacing: .10em; text-transform: uppercase; padding: 8px 1px; }
+  body.live.portrait #lc-sheet { left: 0; right: 0; bottom: 0; border-radius: 0;
+    border-bottom: 0; border-left: 0; border-right: 0; padding-left: var(--sl); padding-right: var(--sr); padding-bottom: var(--sb);
+    max-height: 58%; }
+  body.live.portrait #lc-sheet.min .body { display: none; }
+  body.live.landscape #lc-sheet { top: 0; bottom: 0; right: 0; width: min(330px, 42vw);
+    border-radius: 0; border-right: 0; border-top: 0; border-bottom: 0; padding-top: var(--st); padding-bottom: var(--sb);
+    padding-right: var(--sr); }
+  body.live.landscape #lc-sheet.min { width: auto; top: auto; bottom: calc(var(--sb) + 10px); border-top: 1px solid var(--line2); border-bottom: 1px solid var(--line2); }
+  body.live.landscape #lc-sheet.min .body { display: none; }
+  body.live.landscape #lc-sheet .hdr .grab { display: none; }
+  #lc-spin { position: fixed; z-index: 7; display: none; gap: 10px; flex-direction: column; }
+  #lc-spin.on { display: flex; }
+  #lc-spin button { width: 54px; height: 54px; border-radius: 27px; padding: 0; font-size: 24px; line-height: 1;
+    background: var(--ctl-bg); border: 1px solid var(--line2); color: var(--ink); touch-action: none;
+    -webkit-tap-highlight-color: transparent; }
+  #lc-spin button.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  #lc-spin button.dim { opacity: .35; }
+  body.live.portrait #lc-spin { left: calc(var(--sl) + 10px); bottom: calc(var(--sb) + 70px); }
+  body.live.portrait.sheet-open #lc-spin, body.live.portrait.guide-open #lc-spin { display: none; }
+  body.live.landscape #lc-spin { left: calc(var(--sl) + 12px); bottom: calc(var(--sb) + 16px); }
+  #lc-guide { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 16px; }
+  #lc-guide.on { display: flex; }
+  #lc-guide .gd { width: min(400px, 100%); max-height: calc(100% - var(--st) - var(--sb) - 16px); overflow-y: auto;
+    -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
+    background: var(--sheet-bg); border: 1px solid var(--line2); padding: 8px 12px 10px; }
+  body.live.landscape #lc-guide { padding: 8px 16px; }
+  body.live.landscape #lc-guide img { width: 32px; height: 48px; flex-basis: 32px; }
+  body.live.landscape #lc-guide .grow { padding: 3px 0; }
+  body.live.landscape #lc-guide .gk { margin-top: 5px; }
+  #lc-guide .gh { display: flex; align-items: center; justify-content: space-between; font: 10px/1.4 var(--mono);
+    letter-spacing: .12em; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  #lc-guide .gx { color: var(--ink); font-size: 13px; padding: 2px 0 2px 12px; cursor: pointer; }
+  #lc-guide .gcols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  #lc-guide .gcol:first-child { border-right: 1px solid var(--line); padding-right: 12px; }
+  #lc-guide .gk { font: 9px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 8px 0 0; }
+  #lc-guide .grow { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  #lc-guide .gcol .grow:last-child { border-bottom: 0; }
+  #lc-guide img { width: 40px; height: 60px; flex: 0 0 40px; display: block; filter: contrast(1.05); }
+  #lc-guide .grow b { display: block; font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+  #lc-guide .grow i { display: block; font: 10px/1.4 var(--mono); font-style: normal; color: var(--dim); }
+  #lc-close { position: fixed; z-index: 11; display: none; top: calc(var(--st) + 6px); right: calc(var(--sr) + 8px);
+    width: 34px; height: 34px; border-radius: 17px; padding: 0; font-size: 18px; line-height: 1; font-weight: 300;
+    background: var(--ctl-bg); border: 1px solid var(--line2); color: var(--ink); -webkit-tap-highlight-color: transparent; }
+  #lc-close.on { display: block; }
+  #lc-theme { position: fixed; z-index: 11; display: none; top: calc(var(--st) + 6px); right: calc(var(--sr) + 50px);
+    height: 34px; border: 1px solid var(--line2); border-radius: 17px; overflow: hidden; background: var(--ctl-bg); }
+  #lc-theme.on { display: flex; }
+  #lc-theme button { width: 42px; height: 100%; min-height: 0; padding: 0; margin: 0; border: 0; border-radius: 0;
+    background: transparent; color: var(--dim); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #lc-theme button + button { border-left: 1px solid var(--line2); }
+  #lc-theme button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  #lc-theme svg { display: block; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  body.live.landscape #lc-sheet { top: calc(var(--st) + 48px); }
+  #lc-cam { position: fixed; z-index: 9; display: none; left: 50%; transform: translateX(-50%);
+    top: calc(var(--st) + 44px); width: min(380px, calc(100vw - 24px)); background: var(--modal-bg);
+    border: 1px solid var(--line2); border-radius: 2px; padding: 12px 14px; }
+  #lc-cam.on { display: block; }
+  #lc-cam .row { margin-top: 10px; }
+  #lc-cam button { min-height: 44px; }
+  #lc-toast { position: fixed; z-index: 9; display: none; left: 50%; transform: translateX(-50%);
+    top: calc(var(--st) + 44px); max-width: calc(100vw - 24px); background: var(--modal-bg);
+    border: 1px solid var(--line2); border-radius: 2px; padding: 8px 12px; font: 12px/1.5 var(--mono); }
+  #lc-toast.on { display: block; }
+  #lc-exit { position: fixed; z-index: 12; display: none; left: 50%; transform: translateX(-50%);
+    top: calc(var(--st) + 44px); width: min(340px, calc(100vw - 24px)); background: var(--modal-bg);
+    border: 1px solid var(--line-strong); border-radius: 2px; padding: 14px 16px 12px; }
+  #lc-exit.on { display: block; }
+  #lc-exit .t { font-weight: 600; color: var(--fg-strong); }
+  #lc-exit .s { margin-top: 4px; font: 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-dim); }
+  #lc-exit .opt { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; color: var(--fg-strong); cursor: pointer; }
+  #lc-exit .opt input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--fg); }
+  #lc-exit .row { margin-top: 10px; }
+  #lc-exit .row button { width: 100%; }
+  .hc { position: fixed; z-index: 8; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; border-radius: 9px;
+    border: 1.5px solid rgba(243,241,236,.95); pointer-events: none; display: none; left: 0; top: 0; }
+  .hc.l { border-style: dashed; }
+  .hc.pinch { background: rgba(243,241,236,.35); }
+  .hc.grab { background: rgba(243,241,236,.9); }
+  .hc.orbit { background: rgba(243,241,236,.55); }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
+<div id="lc-load"><div style="font: 13px/1.5 var(--mono); letter-spacing:.12em; text-transform:uppercase">Compositional AI Digital Twin</div>
+  <div class="muted" id="lc-load-msg" style="font: 11px/1.5 var(--mono); letter-spacing:.08em">Loading the live simulation&#8230;</div>
+  <div class="bar"><i id="lc-bar"></i></div></div>
+<div id="lc-title"><b>Compositional AI Digital Twin</b> &nbsp;/&nbsp; live<br><span id="lc-status"></span></div>
+<div id="lc-theme" role="group" aria-label="Appearance">
+  <button id="lc-theme-light" aria-pressed="false"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.6 12H2.4M21.6 12h-2.2M6.4 6.4 4.8 4.8M19.2 19.2l-1.6-1.6M17.6 6.4l1.6-1.6M4.8 19.2l1.6-1.6"/></svg><span class="vh">Light appearance</span></button>
+  <button id="lc-theme-dark" aria-pressed="true"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4.2a7.8 7.8 0 0 0 0 15.6z" fill="currentColor"/></svg><span class="vh">Dark appearance</span></button>
+</div><button id="lc-close" aria-label="close">&#10005;</button>
+<div id="lc-spin">
+  <button id="lc-add" data-ui="0" aria-label="add a particle">+</button>
+  <button id="lc-del" data-ui="1" aria-label="remove half of the particles">&minus;</button>
+  <button id="lc-help" data-ui="4" aria-label="gesture guide">?</button></div>
+<!-- Gesture board: the Level A front-wall LED board (L / R columns, PINCH / MID PINCH / SNAP / UP / DOWN)
+     redrawn as hairline pictograms; plus the touch row. Tap anywhere to close. -->
+<div id="lc-guide">
+  <div class="gd">
+    <div class="gh"><span>Gestures</span><span class="gx" id="lc-guide-x">&#10005;</span></div>
+    <div class="gcols">
+      <div class="gcol"><div class="gk">Left hand</div>
+        <div class="grow"><img data-g="guide_left_pinch" alt=""><div><b>Pinch</b><i>orbit &middot; zoom</i></div></div>
+        <div class="grow"><img data-g="guide_left_up" alt=""><div><b>Up</b><i>spin</i></div></div>
+        <div class="grow"><img data-g="guide_left_down" alt=""><div><b>Down</b><i>spin</i></div></div>
+      </div>
+      <div class="gcol"><div class="gk">Right hand</div>
+        <div class="grow"><img data-g="guide_right_pinch" alt=""><div><b>Pinch</b><i>grab &middot; drag</i></div></div>
+        <div class="grow"><img data-g="guide_right_middle" alt=""><div><b>Mid pinch</b><i>spawn</i></div></div>
+        <div class="grow"><img data-g="guide_right_snap" alt=""><div><b>Snap</b><i>remove half</i></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="hc" id="lc-hc-r"></div><div class="hc l" id="lc-hc-l"></div>
+<div id="lc-cam">
+  <div style="font-weight:600">&#9995; Hand control</div>
+  <div class="muted" style="margin-top:4px">Uses the front camera to read hand gestures. Camera frames stay on this
+    device. Touch always keeps working.</div>
+  <div class="row"><button class="primary" id="lc-cam-yes">Enable camera</button><button id="lc-cam-no">Touch only</button></div>
+</div>
+<div id="lc-exit" role="dialog" aria-modal="true" aria-labelledby="lc-exit-t">
+  <div class="t" id="lc-exit-t">Any issues?</div>
+  <div class="s">Select any.</div>
+  <label class="opt"><input type="checkbox" data-issue="flow_unclear">Flow unclear</label>
+  <label class="opt"><input type="checkbox" data-issue="performance">Feels slow</label>
+  <label class="opt"><input type="checkbox" data-issue="gestures">Gestures unreliable</label>
+  <label class="opt"><input type="checkbox" data-issue="usefulness">Not useful to me</label>
+  <div class="row"><button class="primary" id="lc-exit-go">Exit</button></div>
+</div><div id="lc-toast"></div>
+<div id="lc-lost" class="card" style="position:fixed;z-index:12;display:none;left:50%;top:40%;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 24px))">
+  <div style="font-weight:600">The graphics context was lost</div>
+  <div class="muted" style="margin-top:4px">The browser reclaimed the GPU (for example under memory pressure or after the app was backgrounded). Copy the report first if you are testing, then reload.</div>
+  <div class="row"><button class="primary" onclick="location.reload()">Reload</button></div>
+</div>
+<div id="lc-sheet" class="min">
+  <div class="hdr" id="lc-sheet-h"><span class="t">Controls</span><span class="grab"></span><span class="chev" id="lc-chev">&#9650;</span></div>
+  <div class="body">
+    <div class="sec"><div class="k">Particle model</div>
+      <div class="seg" data-group="model"><button data-cmd="model:POINT">POINT</button><button data-cmd="model:NEURAL" class="sel">NEURAL</button></div></div>
+    <div class="sec"><div class="k">Wake interaction</div>
+      <div class="seg" data-group="wake"><button data-cmd="wake:OFF">OFF</button><button data-cmd="wake:MOS" class="sel">MOS SOLVER</button></div></div>
+    <div class="sec"><div class="k">Tracers</div>
+      <div class="seg" data-group="tracers"><button data-cmd="tracers:OFF">OFF</button><button data-cmd="tracers:NEAR" class="sel">NEAR</button><button data-cmd="tracers:SELECTED">SELECTED</button></div>
+      <div class="k" style="margin-top:8px">NEAR range beyond the particle surface (D)</div>
+      <div class="seg" data-group="nearr"><button data-cmd="nearrange:0.5" class="sel">0.5</button><button data-cmd="nearrange:1.0">1.0</button><button data-cmd="nearrange:1.5">1.5</button></div>
+      <div class="note" id="lc-tr-note">NEAR: 16 tracers within 0.5 D of every particle surface</div></div>
+    <div class="sec"><div class="k">Hand control</div>
+      <div class="seg" data-group="hand"><button data-hand="off" class="sel">OFF</button><button data-hand="on">ON</button></div>
+      <div class="note" id="lc-hand-note">Touch: drag a particle to move it, drag empty space to orbit, pinch to zoom.</div></div>
+    <div class="sec"><div class="k">View (camera on that side, looking at the centre)</div>
+      <div class="btns" style="grid-template-columns:repeat(6,1fr)"><button data-cmd="view:+x">+X</button><button data-cmd="view:-x">&minus;X</button><button data-cmd="view:+y">+Y</button><button data-cmd="view:-y">&minus;Y</button><button data-cmd="view:+z">+Z</button><button data-cmd="view:-z">&minus;Z</button></div>
+      <div class="note">Flow runs along +Z (up). Drag to orbit from any view; pinch to zoom.</div></div>
+    <div class="sec"><div class="k">Max particles</div>
+      <div class="seg" data-group="maxnp"><button data-cmd="maxnp:8" class="sel">8</button><button data-cmd="maxnp:16">16</button><button data-cmd="maxnp:32">32</button></div>
+      <div class="btns" style="margin-top:6px"><button data-cmd="reset">Reset</button></div>
+      <div class="note" id="lc-np-note">8 is the qualified limit; each particle adds 182 network rows per step</div></div>
+    <div class="sec"><div class="k">Slice (live MOS field)</div>
+      <div class="seg" data-group="slice"><button data-slice="off" class="sel">OFF</button><button data-slice="on">ON</button></div>
+      <div class="seg" data-group="sliceaxis" style="margin-top:6px"><button data-cmd="sliceaxis:X" class="sel">X</button><button data-cmd="sliceaxis:Y">Y</button><button data-cmd="sliceaxis:Z">Z</button></div>
+      <input type="range" id="lc-slice-pos" min="0" max="1000" value="500" aria-label="slice position">
+      <div class="note" id="lc-slice-note">Colour: |u &minus; U| (0&ndash;2), isolines every 0.5</div></div>
+  </div>
+</div>
+<div class="wrap" id="ui">
+  <h1>Compositional AI Digital Twin</h1>
+  <p class="sub" id="lede">Checking what this device can run&#8230;</p>
+  <div class="bar"><i id="bar"></i></div>
+  <div id="body"></div>
+  <noscript>
+    <div class="card">
+      <h2 style="margin-top:0">JavaScript is turned off</h2>
+      <p class="muted">This page checks what your device can run before starting anything, which
+        needs JavaScript. You can still read about the project and open the recorded playback.</p>
+      <div class="row">
+        <a class="btn" href="fallback/about.html">About &amp; compatibility</a>
+        <a class="btn" href="fallback/index.html">Recorded playback</a>
+      </div>
+    </div>
+  </noscript>
+  <p class="muted" style="margin-top:28px; font-size:12.5px">Anonymous aggregate usage and optional
+    exit-issue counts help improve this demo. No cookies, persistent identifiers, camera frames,
+    hand data or precise location are collected.</p>
+</div>
+<script>
+var PDT_ROUTER_VERSION = 'p28d2c-optd-ui4-32c5587-staging';
+var LC_RELEASE = 'ml-opt-d-ui4-32c5587';
+var LC_BUILD = 'live/' + LC_RELEASE + '/Build/';
+// Aggregate-only usage counters. Empty string = analytics disabled, which is the state
+// shipped until the Worker is deployed. Setting this to the Worker URL is the only change
+// needed to turn it on; nothing else in the page depends on it.
+var PDT_ANALYTICS_URL = 'https://pdt-feedback.pdt-feedback-worker.workers.dev';
+var LC_NAME = 'pdt-lite';
+var LC_EXT = '.unityweb';
+var LITE_ONLY = 'yes' === 'yes';
+var LEVEL = { FULL: 'FullWebGPU', LIVE: 'LiveWebGL2', WEBGL: 'WebGLFallback',
+              STATIC: 'StaticFallback', FATAL: 'FatalPageError' };
+var UNITY_CALLS = 0;
+var REQUIRED_LIMITS = {
+  maxStorageBuffersPerShaderStage: 15,
+  maxComputeWorkgroupStorageSize: 32768,
+  maxComputeInvocationsPerWorkgroup: 1024,
+  maxBufferSize: 2147483648,
+  maxStorageBufferBindingSize: 2147483644
+};
+var WATCHDOG_MS = 180000;
+var state = { level: null, reason: '', adapter: null, deviceLimits: null, webgl2: false,
+              mobile: false, markers: [], router: PDT_ROUTER_VERSION, lcRelease: LC_RELEASE };
+function el(id) { return document.getElementById(id); }
+function setBar(p) { el('bar').style.width = Math.round(p * 100) + '%'; }
+function say(t) { el('lede').textContent = t; }
+function isMobileDevice() {
+  var ua = navigator.userAgent || '';
+  if (/iPhone|iPod|iPad|Android|Mobile/i.test(ua)) return true;
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+async function detect() {
+  setBar(0.1);
+  console.log('[P28C] ROUTER ' + PDT_ROUTER_VERSION);
+  console.log('[P28C] navigator.gpu = ' + (navigator.gpu ? 'present' : 'undefined'));
+  if (!window.isSecureContext) {
+    return { level: LEVEL.STATIC, reason: 'not a secure context (HTTPS or localhost required)' };
+  }
+  try { state.webgl2 = !!document.createElement('canvas').getContext('webgl2'); } catch (e) { state.webgl2 = false; }
+  state.mobile = isMobileDevice();
+  if (LITE_ONLY) return state.webgl2 ? { level: LEVEL.LIVE, reason: 'lite release' } : { level: LEVEL.STATIC, reason: 'this browser has no WebGL2' };
+  var fallback = state.webgl2 ? LEVEL.LIVE : LEVEL.STATIC;
+  var ov = (new URLSearchParams(location.search)).get('level');
+  if (ov === 'live' && state.webgl2) return { level: LEVEL.LIVE, reason: 'developer override ?level=live' };
+  if (ov === 'recorded') return { level: LEVEL.WEBGL, reason: 'developer override ?level=recorded' };
+  setBar(0.2);
+  if (state.mobile && state.webgl2 && ov !== 'full') {
+    console.log('[P28C] adapter = not requested (mobile device routed to Mobile Lite)');
+    return { level: LEVEL.LIVE, reason: 'mobile device: live mobile compatibility build (Level A is desktop-qualified)' };
+  }
+  if (!navigator.gpu) return { level: fallback, reason: 'this browser does not expose WebGPU' };
+  var adapter = null;
+  try { adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }); }
+  catch (e) { return { level: fallback, reason: 'requestAdapter threw: ' + e.message }; }
+  console.log('[P28C] adapter = ' + (adapter ? 'obtained' : 'null'));
+  if (!adapter) return { level: fallback, reason: 'no WebGPU adapter is available on this device' };
+  state.adapter = {};
+  for (var k in adapter.limits) state.adapter[k] = adapter.limits[k];
+  setBar(0.35);
+  var short = [];
+  for (var key in REQUIRED_LIMITS) {
+    if (typeof adapter.limits[key] === 'number' && adapter.limits[key] < REQUIRED_LIMITS[key]) {
+      short.push(key + ' ' + adapter.limits[key] + ' < ' + REQUIRED_LIMITS[key]);
+    }
+  }
+  if (short.length) return { level: fallback, reason: 'GPU does not meet the full-simulation requirements (' + short.join('; ') + ')' };
+  try {
+    var dev = await adapter.requestDevice({ requiredLimits: REQUIRED_LIMITS });
+    if (!dev) throw new Error('requestDevice returned nothing');
+    state.deviceLimits = {};
+    for (var dk in dev.limits) state.deviceLimits[dk] = dev.limits[dk];
+    if (dev.destroy) { try { dev.destroy(); } catch (e) {} }
+  } catch (e) {
+    return { level: fallback, reason: 'GPU could not provide the required capabilities (' + e.message + ')' };
+  }
+  setBar(0.5);
+  return { level: LEVEL.FULL, reason: 'WebGPU adapter meets the simulation requirements' };
+}
+var FAIL_MARKERS = ['NullGfxDevice', 'Renderer: Null Device', 'is not supported on this GPU', '[LITE] FATAL'];
+var OK_MARKERS   = ['Renderer: WebGPU Device', '[Demo] spawned', '[LITE] READY'];
+var markerSink = null;
+(function hookConsole() {
+  ['log', 'warn', 'error'].forEach(function (fn) {
+    var orig = console[fn];
+    console[fn] = function () {
+      try {
+        var s = Array.prototype.join.call(arguments, ' ');
+        if (fn === 'error') diag.errors++;
+        if (markerSink) {
+          for (var i = 0; i < FAIL_MARKERS.length; i++) if (s.indexOf(FAIL_MARKERS[i]) >= 0) markerSink('fail', FAIL_MARKERS[i], s);
+          for (var j = 0; j < OK_MARKERS.length; j++) if (s.indexOf(OK_MARKERS[j]) >= 0) markerSink('ok', OK_MARKERS[j], s);
+        }
+      } catch (e) {}
+      return orig.apply(console, arguments);
+    };
+  });
+})();
+function startFull() {
+  if (state.level !== LEVEL.FULL) {
+    console.error('[P28C] REFUSED to start Unity at level=' + state.level);
+    demote('the capability check did not clear this device for the full simulation');
+    return;
+  }
+  el('ui').style.display = 'none';
+  el('stage').classList.add('on');
+  var settled = false;
+  var timer = setTimeout(function () {
+    if (!settled) { settled = true; demote('the simulation did not start within ' + Math.round(WATCHDOG_MS / 1000) + ' seconds'); }
+  }, WATCHDOG_MS);
+  markerSink = function (kind, marker) {
+    if (settled) return;
+    state.markers.push(kind + ':' + marker);
+    if (kind === 'fail') { settled = true; clearTimeout(timer); demote('the GPU driver did not provide a working renderer (' + marker + ')'); }
+    else if (kind === 'ok') { settled = true; clearTimeout(timer); }
+  };
+  var cfg = {
+    dataUrl: 'full/Build/ParticleDigitalTwin-Web.data.br',
+    frameworkUrl: 'full/Build/ParticleDigitalTwin-Web.framework.js.br',
+    codeUrl: 'full/Build/ParticleDigitalTwin-Web.wasm.br',
+    streamingAssetsUrl: 'full/StreamingAssets',
+    companyName: 'DefaultCompany', productName: 'ParticleDigitalTwin', productVersion: '1.0',
+    showBanner: function (m, t) { console.log('[banner ' + t + '] ' + m); }
+  };
+  var s = document.createElement('script');
+  s.src = 'full/Build/ParticleDigitalTwin-Web.loader.js';
+  s.onload = function () {
+    UNITY_CALLS++;
+    try { window.__p28c_unityCalls = UNITY_CALLS; } catch (e) {}
+    console.log('[P28C] createUnityInstance call #' + UNITY_CALLS + ' at level=' + state.level);
+    createUnityInstance(document.querySelector('#unity-canvas'), cfg, function (p) { setBar(0.5 + p * 0.5); })
+      .then(function (u) { unityInst = u; })
+      .catch(function (m) { if (!settled) { settled = true; clearTimeout(timer); demote('the simulation failed to start (' + m + ')'); } });
+  };
+  s.onerror = function () { if (!settled) { settled = true; clearTimeout(timer); demote('the simulation files could not be loaded'); } };
+  document.body.appendChild(s);
+}
+var diag = { errors: 0, contextLost: 0, fatal: null, unity: null, dprCap: 1.25,
+             frames: [], startedAt: 0, readyAt: 0, orientChanges: 0 };
+var hand = { mod: null, starting: false, on: false, hz: 12, longSide: 480, result: null, asked: false };
+var HAND_ASSETS = 'live/ml-edfce09-pages/handtracking/';
+var HAND_SUFFIX = '';
+var HAND_MODULE = 'live/' + LC_RELEASE + '/lite-hand-tracker.js';
+function orientationNow() {
+  var landscape = window.innerWidth > window.innerHeight;
+  if (!landscape) return 'portrait';
+  var a = 0;
+  try { a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0); } catch (e) {}
+  a = ((a % 360) + 360) % 360;
+  return a === 270 ? 'landscape-right' : 'landscape-left';
+}
+var lastOrient = null;
+function applyOrientation() {
+  var o = orientationNow();
+  document.body.classList.toggle('portrait', o === 'portrait');
+  document.body.classList.toggle('landscape', o !== 'portrait');
+  if (o !== lastOrient) { if (lastOrient) diag.orientChanges++; lastOrient = o; }
+  lcSend('orientation:' + o);
+  requestAnimationFrame(sendUiRects);
+}
+function sendUiRects() {
+  var col = el('lc-spin');
+  if (!col || !col.classList.contains('on')) return;
+  var w = Math.max(innerWidth, 1), h = Math.max(innerHeight, 1), parts = [];
+  Array.prototype.forEach.call(col.querySelectorAll('button[data-ui]'), function (b) {
+    var r = b.getBoundingClientRect(), pad = 6;
+    parts.push([b.getAttribute('data-ui'), ((r.left - pad) / w).toFixed(4), ((r.top - pad) / h).toFixed(4),
+                ((r.right + pad) / w).toFixed(4), ((r.bottom + pad) / h).toFixed(4)].join(','));
+  });
+  lcSend('uirects:' + parts.join(';'));
+}
+function effectiveDpr() {
+  var n = window.devicePixelRatio || 1;
+  return diag.dprCap > 0 ? Math.min(n, diag.dprCap) : n;
+}
+function lcSend(cmd) {
+  try { if (unityInst) unityInst.SendMessage('PdtLite', 'OnCommand', cmd); } catch (e) {}
+}
+function startLive() {
+  if (state.level !== LEVEL.LIVE) { demote('internal routing error (live requested at ' + state.level + ')'); return; }
+  document.body.classList.add('live');
+  el('ui').style.display = 'none';
+  el('stage').classList.add('on');
+  el('lc-load').classList.add('on');
+  diag.startedAt = performance.now();
+  applyOrientation();
+  window.addEventListener('resize', applyOrientation);
+  window.addEventListener('orientationchange', function () { setTimeout(applyOrientation, 250); });
+  var canvas = document.querySelector('#unity-canvas');
+  canvas.addEventListener('webglcontextlost', function (e) { diag.contextLost++; console.error('[LITE] webglcontextlost'); try { el('lc-lost').style.display = 'block'; } catch (x) {} }, false);
+  window.addEventListener('error', function (e) { diag.fatal = diag.fatal || String(e.message || e); });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  var settled = false;
+  var timer = setTimeout(function () {
+    if (!settled) { settled = true; demote('the live simulation did not start within ' + Math.round(WATCHDOG_MS / 1000) + ' seconds'); }
+  }, WATCHDOG_MS);
+  markerSink = function (kind, marker, line) {
+    if (kind === 'fail') { diag.fatal = diag.fatal || line; }
+    if (settled) return;
+    state.markers.push(kind + ':' + marker);
+    if (kind === 'fail') { settled = true; clearTimeout(timer); demote('the live simulation could not start (' + line + ')'); }
+    else if (marker === '[LITE] READY') { settled = true; clearTimeout(timer); liveReady(); }
+  };
+  var cfg = {
+    dataUrl: LC_BUILD + LC_NAME + '.data' + LC_EXT,
+    frameworkUrl: LC_BUILD + LC_NAME + '.framework.js' + LC_EXT,
+    codeUrl: LC_BUILD + LC_NAME + '.wasm' + LC_EXT,
+    companyName: 'PDT', productName: 'PDT Mobile Lite', productVersion: LC_RELEASE,
+    devicePixelRatio: effectiveDpr(),
+    matchWebGLToCanvasSize: true,
+    showBanner: function (m, t) { console.log('[banner ' + t + '] ' + m); }
+  };
+  var s = document.createElement('script');
+  s.src = LC_BUILD + LC_NAME + '.loader.js';
+  s.onload = function () {
+    UNITY_CALLS++;
+    console.log('[P28C] createUnityInstance call #' + UNITY_CALLS + ' at level=' + state.level + ' release=' + LC_RELEASE);
+    createUnityInstance(canvas, cfg, function (p) { el('lc-bar').style.width = Math.round(p * 100) + '%'; })
+      .then(function (u) { unityInst = u; applyOrientation(); })
+      .catch(function (m) { if (!settled) { settled = true; clearTimeout(timer); demote('the live simulation failed to start (' + m + ')'); } });
+  };
+  s.onerror = function () { if (!settled) { settled = true; clearTimeout(timer); demote('the live simulation files could not be loaded'); } };
+  document.body.appendChild(s);
+}
+function selectIn(btn) {
+  var seg = btn.parentNode;
+  Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) { x.classList.toggle('sel', x === btn); });
+}
+function selectGroup(group, pred) {
+  var seg = document.querySelector('.seg[data-group="' + group + '"]');
+  if (!seg) return;
+  Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) { x.classList.toggle('sel', pred(x)); });
+}
+var TRACER_NOTES = {
+  OFF: 'Tracers off: no tracer computation runs.',
+  NEAR: 'NEAR: tracers close to every particle surface (live MOS field).',
+  SELECTED: 'SELECTED: tracers in the wake box of the last particle you held.'
+};
+function toast(msg, ms) {
+  var t = el('lc-toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, ms || 3500);
+}
+function flash(btn) {
+  btn.classList.add('active');
+  clearTimeout(btn._ft); btn._ft = setTimeout(function () { btn.classList.remove('active'); }, 180);
+}
+function showGuide(on) {
+  if (on && !showGuide._loaded) {   // the pictures load on first open, not with the page
+    showGuide._loaded = true;
+    Array.prototype.forEach.call(document.querySelectorAll('#lc-guide img[data-g]'), function (im) {
+      im.src = 'live/' + LC_RELEASE + '/guide/' + im.getAttribute('data-g') + '.jpg';
+    });
+  }
+  el('lc-guide').classList.toggle('on', on);
+  el('lc-help').classList.toggle('active', on);
+  document.body.classList.toggle('guide-open', on);
+}
+var SPAWN_WHY = { AtCapacity: 'maximum particles reached — use − to remove some',
+                  Overlap: 'too close to an existing particle', OutsideDomain: 'outside the simulation box' };
+window.__liteOnEvent = function (ev) {
+  var p = String(ev).split(':');
+  if (p[0] === 'spawn' && p[1] !== 'Ok') toast('No new particle: ' + (SPAWN_WHY[p[1]] || p[1]), 2200);
+  if (p[0] === 'uipress') {
+    if (p[1] === '4') { if (p[2] === '1') showGuide(!el('lc-guide').classList.contains('on')); return; }
+    var b = document.querySelector('#lc-spin button[data-ui="' + p[1] + '"]');
+    if (b) { if (p[2] === '1') flash(b); else b.classList.remove('active'); }
+  }
+};
+// Fire-and-forget. Never awaited, never retried, never surfaced: a failure here must not
+// block Exit, block startup, show anything to the visitor, or touch the simulation.
+function pdtSend(payload) {
+  if (!PDT_ANALYTICS_URL) { return; }
+  try {
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    if (ctl) { setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 2000); }
+    fetch(PDT_ANALYTICS_URL, {
+      method: 'POST', mode: 'cors', keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctl ? ctl.signal : undefined
+    }).then(function () {}, function () {});
+  } catch (e) {}
+}
+// The exit panel builds a richer local event; the aggregate service is only allowed the
+// release and the issue codes, so everything else is dropped here rather than transmitted.
+window.pdtAnalyticsSink = function (ev) {
+  try { pdtSend({ type: 'exit_feedback', release: ev.release, issues: ev.issues || [] }); } catch (e) {}
+};
+var pdtVisitSent = false;
+function pdtVisit() {
+  if (pdtVisitSent) { return; }
+  pdtVisitSent = true;
+  pdtSend({ type: 'visit', release: LC_RELEASE });
+}function themePref() {
+  try { var t = localStorage.getItem('pdt-theme'); if (t === 'light' || t === 'dark') { return t; } } catch (e) {}
+  return 'dark';
+}
+function applyTheme(t) {
+  t = (t === 'light') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.querySelector('meta[name=theme-color]');
+  if (m) { m.setAttribute('content', t === 'light' ? '#F3F1EC' : '#15161C'); }
+  var L = document.getElementById('lc-theme-light'), D = document.getElementById('lc-theme-dark');
+  if (L && D) { L.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+                D.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false'); }
+}
+function setTheme(t) { try { localStorage.setItem('pdt-theme', t); } catch (e) {} applyTheme(t); }var exitInfo = { handUsed: false, maxNp: 0 };
+setInterval(function () {
+  try { if (hand && hand.on) exitInfo.handUsed = true; } catch (e) {}
+  try { var u = diag.unity; if (u && u.maxNp) exitInfo.maxNp = Math.max(exitInfo.maxNp, u.maxNp); } catch (e) {}
+}, 2000);
+function exitDurationBucket(ms) {
+  var s = ms / 1000;
+  if (s < 30) return 'lt_30s';
+  if (s < 60) return '30s_1m';
+  if (s < 180) return '1m_3m';
+  if (s < 600) return '3m_10m';
+  return 'gt_10m';
+}
+window.__pdtExitEvents = [];
+function recordExitFeedback(issues) {
+  var ev = { type: 'exit_feedback', release: LC_RELEASE,
+             sessionDurationBucket: exitDurationBucket(performance.now() - (diag.startedAt || 0)),
+             handControlUsed: !!exitInfo.handUsed,
+             maxParticleSetting: exitInfo.maxNp || null,
+             issues: issues };
+  window.__pdtExitEvents.push(ev);
+  try { console.log('[EXIT-FEEDBACK] ' + JSON.stringify(ev)); } catch (e) {}
+  try { if (typeof window.pdtAnalyticsSink === 'function') window.pdtAnalyticsSink(ev); } catch (e) {}
+  return ev;
+}
+function showExitPanel(on) { el('lc-exit').classList.toggle('on', !!on); }function closePage() {
+  try { if (hand.mod) hand.mod.stop(); } catch (e) {}
+  try { if (unityInst && unityInst.Quit) unityInst.Quit(); } catch (e) {}
+  try { window.close(); } catch (e) {}
+  setTimeout(function () {
+    document.body.classList.remove('live', 'portrait', 'landscape');
+    ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
+    ['hc-r', 'hc-l'].forEach(function (id) { var c = el('lc-' + id); if (c) c.style.display = 'none'; });
+    try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
+    el('ui').style.display = '';
+    say('The simulation has stopped.');
+    setBar(1);
+    el('body').innerHTML = '<div class="card"><p>The camera and the simulation are off. You can close this tab now.</p>' +
+      '<div class="row"><button class="primary" onclick="location.reload()">Start again</button></div></div>';
+  }, 300);
+}
+function liveReady() {
+  diag.readyAt = performance.now();
+  pdtVisit();   // visits = successful live-demo launches, not unique people
+  el('lc-load').classList.remove('on');
+  el('lc-sheet').classList.add('on');
+  el('lc-title').classList.add('on');
+  el('lc-spin').classList.add('on');
+  applyOrientation();
+  el('lc-sheet-h').addEventListener('click', function () {
+    var sh = el('lc-sheet'); sh.classList.toggle('min');
+    el('lc-chev').innerHTML = sh.classList.contains('min') ? '&#9650;' : '&#9660;';
+    document.body.classList.toggle('sheet-open', !sh.classList.contains('min'));
+    requestAnimationFrame(sendUiRects);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#lc-sheet button[data-cmd]'), function (b) {
+    b.addEventListener('click', function () {
+      var c = b.getAttribute('data-cmd');
+      lcSend(c);
+      if (b.parentNode.classList.contains('seg')) selectIn(b);
+      if (c.indexOf('tracers:') === 0) el('lc-tr-note').textContent = TRACER_NOTES[c.split(':')[1]] || '';
+      if (c.indexOf('nearrange:') === 0) el('lc-tr-note').textContent = 'NEAR: 16 tracers within ' + c.split(':')[1] + ' D of every particle surface';
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#lc-sheet button[data-slice]'), function (b) {
+    b.addEventListener('click', function () { lcSend('slice:' + b.getAttribute('data-slice')); selectIn(b); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#lc-sheet button[data-hand]'), function (b) {
+    b.addEventListener('click', function () { setHand(b.getAttribute('data-hand') === 'on'); });
+  });
+  var pos = el('lc-slice-pos');
+  pos.addEventListener('input', function () { lcSend('slicepos:' + (pos.value / 1000).toFixed(3)); });
+  function tapPad(btn, cmd) {
+    btn.addEventListener('pointerdown', function (e) { e.preventDefault(); flash(btn); if (typeof cmd === 'function') cmd(); else lcSend(cmd); });
+  }
+  tapPad(el('lc-add'), 'spawnbtn');
+  tapPad(el('lc-del'), 'remove');
+  tapPad(el('lc-help'), function () { showGuide(!el('lc-guide').classList.contains('on')); });
+  el('lc-guide').addEventListener('pointerdown', function (e) { if (e.target === el('lc-guide')) { e.preventDefault(); showGuide(false); } });
+  el('lc-guide-x').addEventListener('click', function () { showGuide(false); });
+  requestAnimationFrame(sendUiRects);
+  setTimeout(sendUiRects, 500);
+  el('lc-close').classList.add('on');
+  el('lc-theme').classList.add('on');
+  el('lc-theme-light').addEventListener('click', function () { setTheme('light'); });
+  el('lc-theme-dark').addEventListener('click', function () { setTheme('dark'); });
+  el('lc-close').addEventListener('click', function () { showExitPanel(true); });
+  el('lc-exit-go').addEventListener('click', function () {
+    var issues = [];
+    Array.prototype.forEach.call(el('lc-exit').querySelectorAll('input[type=checkbox]'), function (c) {
+      if (c.checked) { issues.push(c.getAttribute('data-issue')); }
+    });
+    recordExitFeedback(issues);
+    showExitPanel(false);
+    closePage();
+  });
+  el('lc-cam-yes').addEventListener('click', function () { el('lc-cam').classList.remove('on'); setHand(true); });
+  el('lc-cam-no').addEventListener('click', function () { el('lc-cam').classList.remove('on'); hand.asked = true; setHand(false); toast('Touch control'); });
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) el('lc-cam').classList.add('on');
+  requestAnimationFrame(rafTick);
+}
+window.__liteHandCursor = function (rx, ry, rstate, lx, ly, lvalid, orbit) {
+  var r = el('lc-hc-r'), l = el('lc-hc-l');
+  if (!hand.on) { r.style.display = 'none'; l.style.display = 'none'; return; }
+  if (rstate >= 0) {
+    r.style.display = 'block';
+    r.style.transform = 'translate(' + (rx * innerWidth).toFixed(1) + 'px,' + (ry * innerHeight).toFixed(1) + 'px)';
+    r.classList.toggle('pinch', rstate === 2); r.classList.toggle('grab', rstate === 3);
+  } else r.style.display = 'none';
+  if (lvalid) {
+    l.style.display = 'block';
+    l.style.transform = 'translate(' + (lx * innerWidth).toFixed(1) + 'px,' + (ly * innerHeight).toFixed(1) + 'px)';
+    l.classList.toggle('orbit', !!orbit);
+  } else l.style.display = 'none';
+};
+async function setHand(on) {
+  if (!on) {
+    if (hand.mod) { try { hand.mod.stop(); } catch (e) {} }
+    hand.on = false; lcSend('hand:off');
+    selectGroup('hand', function (x) { return x.getAttribute('data-hand') === 'off'; });
+    el('lc-hand-note').textContent = 'Touch: drag a particle to move it, drag empty space to orbit, pinch to zoom.';
+    window.__liteHandCursor(0, 0, -1, 0, 0, 0, 0);
+    return;
+  }
+  if (hand.starting) return;
+  hand.starting = true; hand.asked = true;
+  el('lc-hand-note').textContent = 'Starting the front camera…';
+  try {
+    if (!hand.mod) {
+      hand.mod = await import(new URL(HAND_MODULE, location.href).href);
+      window.__lcHand = hand.mod.LCH;
+    }
+    var res = await hand.mod.start({ assetBase: HAND_ASSETS, assetSuffix: HAND_SUFFIX, targetHz: hand.hz, processLongSide: hand.longSide });
+    hand.result = res;
+    if (res && res.ok) {
+      hand.on = true; lcSend('hand:on'); lcSend('handhz:' + hand.hz); sendUiRects();
+      selectGroup('hand', function (x) { return x.getAttribute('data-hand') === 'on'; });
+      el('lc-hand-note').textContent = 'Right hand: OK-pinch grabs, thumb-middle paints particles, snap removes half. ' +
+        'Left hand: OK-pinch orbits/zooms, point up/down spins the held particle; OK-pinch on a side button presses it.';
+      toast('Hand control on');
+    } else {
+      hand.on = false; lcSend('hand:off');
+      selectGroup('hand', function (x) { return x.getAttribute('data-hand') === 'off'; });
+      var why = res && res.reason === 'permissionDenied' ? 'camera permission was denied'
+              : res && res.reason === 'noDevice' ? 'no front camera was found'
+              : res && res.reason === 'deviceBusy' ? 'the camera is in use by another app'
+              : res && res.reason === 'trackerFailure' ? 'the hand tracker could not start'
+              : 'the camera could not start';
+      el('lc-hand-note').textContent = 'Hand control unavailable (' + why + '). Touch control is active.';
+      toast('Touch control: ' + why);
+    }
+  } catch (e) {
+    hand.on = false; lcSend('hand:off');
+    hand.result = { ok: false, reason: 'trackerFailure', detail: String(e && e.message || e) };
+    selectGroup('hand', function (x) { return x.getAttribute('data-hand') === 'off'; });
+    el('lc-hand-note').textContent = 'Hand control unavailable (tracker failed to load). Touch control is active.';
+    toast('Touch control: hand tracker failed to load');
+  } finally {
+    hand.starting = false;
+  }
+}
+var lastRaf = 0;
+function rafTick(t) {
+  if (lastRaf) { diag.frames.push(t - lastRaf); if (diag.frames.length > 600) diag.frames.shift(); }
+  lastRaf = t;
+  requestAnimationFrame(rafTick);
+}
+function pct(arr, p) {
+  if (!arr.length) return NaN;
+  var a = arr.slice().sort(function (x, y) { return x - y; });
+  return a[Math.min(a.length - 1, Math.floor(p * (a.length - 1)))];
+}
+window.__liteOnDiag = function (json) {
+  try { diag.unity = JSON.parse(json); } catch (e) { return; }
+  var u = diag.unity;
+  el('lc-status').textContent = (u.model || '') + '  /  ' + (u.wake === 'OFF' ? 'wake off' : 'MOS solver') + '  /  Np ' + u.np +
+    '  /  ' + (u.tracerMode || '').toLowerCase() + (hand.on ? '  /  hand' : '');
+  selectGroup('maxnp', function (x) { return x.getAttribute('data-cmd') === 'maxnp:' + u.maxNp; });   // the limit Unity actually holds
+  el('lc-np-note').textContent = 'Np ' + u.np + ' of max ' + u.maxNp + (u.pendingSpawn ? ' (+' + u.pendingSpawn + ' pending)' : '') +
+    (u.lastAction ? ' — ' + u.lastAction : '');
+  el('lc-add').classList.toggle('dim', u.np + (u.pendingSpawn || 0) >= u.maxNp);
+  el('lc-del').classList.toggle('dim', u.np <= 1);
+  if (u.slice && u.slice.on) el('lc-slice-note').textContent = 'Slice ' + u.slice.axis + ' = ' + u.slice.coord + ' · ' + u.slice.res + '² @ ' +
+    u.slice.hz + ' Hz · colour |u − U| (0–2), isolines 0.5';
+};
+function snapshot() {
+  var u = diag.unity || {};
+  var p50 = pct(diag.frames, 0.5), p95 = pct(diag.frames, 0.95);
+  var mem = null;
+  try { if (unityInst && unityInst.Module && unityInst.Module.HEAPU8) mem = unityInst.Module.HEAPU8.length; } catch (e) {}
+  return {
+    router: PDT_ROUTER_VERSION, release: LC_RELEASE, path: state.level, reason: state.reason,
+    ua: navigator.userAgent, platform: navigator.platform, touch: navigator.maxTouchPoints,
+    webgl2: state.webgl2, mobile: state.mobile, orientation: orientationNow(), orientationChanges: diag.orientChanges,
+    screen: screen.width + 'x' + screen.height, viewport: innerWidth + 'x' + innerHeight,
+    devicePixelRatio: window.devicePixelRatio, dprCap: diag.dprCap, renderDpr: effectiveDpr(),
+    canvas: (function () { var c = el('unity-canvas'); return c.width + 'x' + c.height; })(),
+    pageFrameMsP50: +p50.toFixed(2), pageFrameMsP95: +p95.toFixed(2),
+    visualFpsP50: +(1000 / p50).toFixed(1), visualFpsP95Low: +(1000 / p95).toFixed(1),
+    wasmHeapBytes: mem, jsHeapBytes: (performance.memory && performance.memory.usedJSHeapSize) || null,
+    webglContextLost: diag.contextLost, consoleErrors: diag.errors, fatal: diag.fatal,
+    secondsSinceReady: diag.readyAt ? +((performance.now() - diag.readyAt) / 1000).toFixed(1) : 0,
+    loadSeconds: diag.readyAt ? +((diag.readyAt - diag.startedAt) / 1000).toFixed(1) : null,
+    handState: hand.mod && hand.mod.LCH ? hand.mod.LCH.state : 'not loaded', unity: u
+  };
+}
+window.__liteSnapshot = snapshot;
+applyTheme(themePref());
+var unityInst = null;
+function demote(reason) {
+  state.reason = reason;
+  state.level = state.webgl2 ? LEVEL.WEBGL : LEVEL.STATIC;
+  markerSink = null;
+  try { if (hand.mod) hand.mod.stop(); } catch (e) {}
+  try { if (unityInst && unityInst.Quit) { unityInst.Quit(); } } catch (e) {}
+  try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
+  document.body.classList.remove('live', 'portrait', 'landscape');
+  ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
+  el('ui').style.display = '';
+  render();
+}
+function render() {
+  var lvl = state.level, body = el('body');
+  setBar(1);
+  if (lvl === LEVEL.WEBGL || lvl === LEVEL.STATIC) {
+    say('The live simulation could not run here. A recorded version is available instead.');
+    body.innerHTML =
+      '<div class="card"><span class="tag">Recorded data</span>' +
+      '<h2 style="margin-top:10px">Interactive playback</h2>' +
+      '<p class="muted">This plays back <strong>recorded output of the same qualified solver</strong> - real trajectories ' +
+      'and a real tracer field. It is not a live simulation.</p>' +
+      '<div class="row"><a class="btn" style="background:var(--accent);border-color:var(--accent);color:var(--bg)" href="fallback/index.html">Open the playback</a>' +
+      '<a class="btn" href="fallback/about.html">What is this?</a></div></div>' +
+      '<details><summary>Technical detail</summary><p class="muted">Reason: ' + esc(state.reason) + '<br>' +
+      'WebGL2 available: ' + state.webgl2 + '</p></details>';
+  } else if (lvl === LEVEL.FATAL) {
+    say('Something went wrong loading this page.');
+    body.innerHTML = '<div class="card"><p>' + esc(state.reason) + '</p>' +
+      '<div class="row"><button class="primary" onclick="location.reload()">Try again</button></div></div>';
+  }
+}
+function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]; }); }
+(async function boot() {
+  var r;
+  var guard = new Promise(function (res) {
+    setTimeout(function () { res({ level: LEVEL.STATIC, reason: 'the capability check did not finish in time' }); }, 20000);
+  });
+  try { r = await Promise.race([detect(), guard]); }
+  catch (e) { r = { level: LEVEL.FATAL, reason: 'capability check failed: ' + e.message }; }
+  state.level = r.level; state.reason = r.reason;
+  try { window.__p28c = state; } catch (e) {}
+  console.log('[P28C] level=' + state.level + ' reason="' + state.reason + '" webgl2=' + state.webgl2 + ' mobile=' + state.mobile);
+  if (r.level === LEVEL.FULL) { say('Starting the simulation…'); startFull(); }
+  else if (r.level === LEVEL.LIVE) { startLive(); }
+  else { render(); }
+})();
+</script>
+</body>
+</html>
