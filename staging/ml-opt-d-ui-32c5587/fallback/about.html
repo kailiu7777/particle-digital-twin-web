@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Particle Digital Twin - about &amp; compatibility</title>
+<link rel="icon" href="../full/TemplateData/favicon.ico">
+<style>
+  :root { --bg:#07090d; --panel:#0e1319; --line:#1d2733; --ink:#e6edf3; --dim:#8b98a6;
+          --accent:#5aa9e6; --warn:#e0a458; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:44px 22px 90px; }
+  h1 { font-size:31px; line-height:1.18; margin:0 0 8px; letter-spacing:-0.01em; }
+  h2 { font-size:19px; margin:38px 0 10px; }
+  p.sub { color:var(--dim); font-size:17px; margin:0 0 26px; }
+  a { color:var(--accent); }
+  img.hero { width:100%; border-radius:10px; border:1px solid var(--line); display:block; margin:22px 0 8px; }
+  figcaption { color:var(--dim); font-size:12.5px; margin-bottom:24px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:18px 0; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  td,th { border-bottom:1px solid var(--line); padding:7px 8px; text-align:left; vertical-align:top; }
+  th { color:var(--dim); font-weight:600; }
+  code { font-family:ui-monospace,Consolas,monospace; font-size:13px; color:var(--accent); }
+  .muted { color:var(--dim); font-size:13.5px; }
+  .btn { display:inline-block; font-weight:600; padding:11px 18px; border-radius:8px;
+    border:1px solid var(--line); background:#16202b; color:var(--ink); text-decoration:none; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#06121d; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin:20px 0 8px; }
+  ul { padding-left:20px; }
+  li { margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Particle Digital Twin</h1>
+  <p class="sub">A GPU digital twin of finite-size particles moving in a fluid, with a neural
+     surrogate standing in for the resolved near-field flow.</p>
+
+  <figure style="margin:0">
+    <img class="hero" src="media/demo_scene_preview.png"
+         alt="Ellipsoidal particles with body-axis markers suspended in a dense tracer velocity field">
+    <figcaption>Particles with body-axis markers in the tracer velocity field, rendered by the simulation.</figcaption>
+  </figure>
+
+  <h2>What it does</h2>
+  <p>Each particle is treated as a finite body, not a point. Its motion follows from the forces and
+     torques on its surface, sampled over a fixed quadrature, and the surrounding flow is carried by
+     tracers that respond to the particle's disturbance rather than only to the background stream.
+     The expensive part - the near-field flow around a particle at a given orientation and spin - is
+     evaluated by a trained surrogate model on the GPU, which is what makes an interactive rate
+     possible at all.</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">The recorded regime</h2>
+    <table>
+      <tr><th>Quantity</th><th>Value</th></tr>
+      <tr><td>Particle diameter <code>D</code></td><td>1.0</td></tr>
+      <tr><td>Kinematic viscosity <code>&nu;</code></td><td>0.1</td></tr>
+      <tr><td>Fluid density <code>&rho;<sub>f</sub></code></td><td>1.0</td></tr>
+      <tr><td>Particle density <code>&rho;<sub>p</sub></code></td><td>2.0</td></tr>
+      <tr><td>Background flow <code>U<sub>macro</sub></code></td><td>(0, 0, 1)</td></tr>
+      <tr><td>Surface quadrature</td><td>LEBEDEV_26 (26 points)</td></tr>
+      <tr><td>Validity contract</td><td>Re 1 &ndash; 300, |&omega;| &le; 3.0</td></tr>
+      <tr><td>Timestep</td><td>1/60 s</td></tr>
+    </table>
+    <p class="muted" style="margin-bottom:0">These are the values recorded in the dataset manifest
+       shipped with the playback, not illustrative numbers.</p>
+  </div>
+
+  <h2>Why some devices see a recorded playback</h2>
+  <p>The live version solves the flow on your GPU using WebGPU compute shaders. There are 126 compute
+     kernels; none of them can run without WebGPU. A browser that exposes no usable WebGPU adapter
+     cannot run the simulation at all - and rather than show you a blank canvas, this site detects
+     that before starting and offers recorded output of the same solver instead.</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">What the full version needs</h2>
+    <table>
+      <tr><th>Requirement</th><th>Notes</th></tr>
+      <tr><td>WebGPU available</td><td><code>navigator.gpu</code> present, and an adapter actually obtainable</td></tr>
+      <tr><td><code>maxStorageBuffersPerShaderStage</code> &ge; 15</td><td>The WebGPU <em>default</em> is 8, so some conformant devices fall short</td></tr>
+      <tr><td><code>maxComputeWorkgroupStorageSize</code> &ge; 32768</td><td>default is 16384</td></tr>
+      <tr><td><code>maxComputeInvocationsPerWorkgroup</code> &ge; 1024</td><td>default is 256</td></tr>
+      <tr><td>Large buffer support</td><td>2 GiB buffer and storage-binding size</td></tr>
+    </table>
+  </div>
+
+  <h2>Getting the full version</h2>
+  <ul>
+    <li>Use a recent <strong>Chrome</strong> or <strong>Edge</strong> on Windows or macOS.</li>
+    <li>Make sure the machine has a working GPU driver. On a laptop with two GPUs, the discrete one
+        generally works best.</li>
+    <li>Hardware acceleration must be enabled in the browser.</li>
+  </ul>
+  <p class="muted">If the site still offers the recorded playback after that, this device genuinely
+     cannot provide the GPU capabilities the simulation needs. That is a hardware and driver limit,
+     not something you have configured wrongly.</p>
+
+  <div class="row">
+    <a class="btn primary" href="index.html">Open the recorded playback</a>
+    <a class="btn" href="../index.html">Try the full version again</a>
+  </div>
+
+  <h2>Honesty notes</h2>
+  <ul>
+    <li>The playback replays <strong>stored output of the qualified solver</strong>. It does not
+        re-simulate anything in your browser and does not approximate the physics.</li>
+    <li>The recorded particle displacement is genuinely small. The playback shows true scale by
+        default; any exaggeration is an explicit, labelled multiplier, and it never alters the
+        recorded orientation, forces or tracer field.</li>
+    <li>Features that require live GPU solving - POINT / NEURAL comparison, live tracer advection,
+        the MOS solver controls and hand-gesture control - are marked unavailable rather than
+        simulated by other means.</li>
+  </ul>
+
+  <p class="muted" style="margin-top:34px">Particle Digital Twin &middot; WebGPU build.
+     This is a staging preview and is not a final public release.</p>
+</div>
+</body>
+</html>
