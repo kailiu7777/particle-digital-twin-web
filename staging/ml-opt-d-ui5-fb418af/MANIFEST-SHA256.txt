@@ -1,0 +1,43 @@
+MOBILE LITE v2 - FULL TWO-COLOUR INVERSION - STAGING MANIFEST
+STAGING_RELEASE=ml-opt-d-ui5-fb418af
+SUPERSEDES=ml-opt-d-ui4-32c5587
+THEME_SOURCE_COMMIT=fb418af (LiteTheme + themed shaders/renderer/slice/app)
+LADDER_SOURCE_COMMIT=8b94fedc65dd82977edca61a3deef481c2c402b3
+BASELINE_COMMIT=edfce093a7f5f1b57e2b76dae1d825960696c94f
+UNITY_VERSION=6000.6.0f1 (f7f8ed4d1e24)   AI_INFERENCE_VERSION=2.6.1   BACKEND=GPUPixel
+DARK_BG=#15161C  DARK_FG=#F3F1EC   LIGHT_BG=#F3F1EC  LIGHT_FG=#15161C
+VIEWPORT=inverts with the interface (camera clear, domain frame, grid, particles, tracers, slice, isolines)
+PARITY=P28D2C_LITE_PARITY PASS, 132 checks, 0 failures (re-run after the render change)
+ANALYTICS=visit + exit-issue counters only; theme preference is local and never transmitted
+generated=2026-09-24T19:25:49Z
+
+# SHA256  bytes  path (excludes this manifest)
+8e3c1b4b25be44a9ee1120c686ef931fa2daf7b88477b648a7eaa2a14171ede7  6793  fallback/about.html
+7803728deb289e707dac2bb74529b5ae3900a2b9c82e0ae1f3c98ff534ce6657  45021  fallback/data/canonical_frames.csv
+4ffab0762f77ef92ecfb7a746bb4a3e2378149805eb64669d5aa23bc160128b3  948  fallback/data/manifest.json
+ac276520950325712153f579c76f194b2e7c13ee0ecb01cf398806189ef25364  164114  fallback/data/spin_trajectory.csv
+a526f27f014a81bb1a1eb941b667afaaa8b9f9bd092e0d5f7ea7d825e8a7faa9  1334  fallback/data/surface_loads.csv
+1039ec69b46b46088ec63c544d4561dadd8c0d62ceb52a0461c4f9b02703b402  109918  fallback/data/tracer_field.csv
+64406c916f0628b6a421a00383e010c03eea3c640ac8c5e96dd4e8dfc6dfac06  15054  fallback/index.html
+62bb6935e396d21df9c2c9008414c0faf7c28b199f99f892f745ab76ca94ea68  698986  fallback/media/demo_scene_preview.png
+97afab67d8ca0f789c1cd741dd6419169253b8c86d099c5f11d82cd0fe5ff564  293354  fallback/media/p4_shot9_sliceZ.png
+620b00367ed41ee2ec2ca5b532fcf5abc6efd91c6c25bb2e7a4fe2bf15947031  797474  fallback/media/polish_shot3_full.png
+9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f  2305  full/TemplateData/favicon.ico
+a0f14ac3e0a62c37d16b51f006bf6aa1f8ec6870c6b01f4d3fb3e08a10b24a6c  53953  index.html
+da3ae2d73469e8f5d565ed99d9f08fa925c1b1203411cd34c61c629e8abe60a1  3991592  live/ml-opt-d-ui5-fb418af/Build/pdt-lite.data.unityweb
+b9f8e987c4318da72037c14bc7ab1c7d63920e1c45ddbfc79a19f431779ed366  70594  live/ml-opt-d-ui5-fb418af/Build/pdt-lite.framework.js.unityweb
+29fe2052dde6fb13cc7a4e45fd68b734941b6917c3b7ba2ee824965a8cc1d936  48779  live/ml-opt-d-ui5-fb418af/Build/pdt-lite.loader.js
+2fa33ed4518347e91490f0dc88fe7198c0779c273692ce1e2e8affbbd1e74c22  8455371  live/ml-opt-d-ui5-fb418af/Build/pdt-lite.wasm.unityweb
+14a6cb2e5937c9d308e1a5a6d24f4f5295ff48162f6c4186731301bb30dde8f8  14963  live/ml-opt-d-ui5-fb418af/guide/guide_left_down.jpg
+467a8eaf220d8c00125d4bae5682e8352067f0d20c800cf6a763dcaaa9e2cba3  18868  live/ml-opt-d-ui5-fb418af/guide/guide_left_pinch.jpg
+85e2218ecdde9683670e23b60c270a901223a2e8c0c21493c826fd2bc45af275  12819  live/ml-opt-d-ui5-fb418af/guide/guide_left_up.jpg
+060c3a859925b5da7ab2ecfbabaff7c605ebc4b6d41b8190492e6e8b76b140dc  20277  live/ml-opt-d-ui5-fb418af/guide/guide_right_middle.jpg
+d78908f8ac9cbb4b2ce62818130cac166b10d7056d5fd4f060bcd3330a908025  18779  live/ml-opt-d-ui5-fb418af/guide/guide_right_pinch.jpg
+fe07c92be757ee6db9bccdfadbc0681e68b65a478ef421f32e02eec2ced362c5  18726  live/ml-opt-d-ui5-fb418af/guide/guide_right_snap.jpg
+ee13fd64d297605067ae7470f8ce9c9dcc0f2c4abcfd7001533aeb19b25a3483  2605  live/ml-opt-d-ui5-fb418af/handtracking/PROVENANCE.md
+66cae3f8571cbe64d11415b589019ca83e7e3c02a71dce785e59bdb5b1adb8bf  370  live/ml-opt-d-ui5-fb418af/handtracking/SHA256SUMS
+fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1  7819105  live/ml-opt-d-ui5-fb418af/handtracking/models/hand_landmarker.task
+d885630c297c0b20b1fe86096cb06291c4c8080876f27852e724f24ac603713f  155439  live/ml-opt-d-ui5-fb418af/handtracking/vision_bundle.mjs
+e170ee67dd4e16c1a6fcd8840a206687e5a59b22c20e4a902bc445b095454d73  323377  live/ml-opt-d-ui5-fb418af/handtracking/wasm/vision_wasm_internal.js
+8da277a733926eacd0474b8704b36742d6ec3231c57a860c5b889dff8f1df886  11756954  live/ml-opt-d-ui5-fb418af/handtracking/wasm/vision_wasm_internal.wasm
+85462f2d024728ac0bee9bc66baaffa8067196f8103ca14cb157f9ae2a5f234c  16786  live/ml-opt-d-ui5-fb418af/lite-hand-tracker.js
