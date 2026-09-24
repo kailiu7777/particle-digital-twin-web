@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Particle Digital Twin - recorded playback</title>
+<link rel="icon" href="../full/TemplateData/favicon.ico">
+<style>
+  :root { --bg:#07090d; --panel:#0e1319; --line:#1d2733; --ink:#e6edf3; --dim:#8b98a6;
+          --accent:#5aa9e6; --warn:#e0a458; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink);
+    font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex;
+    align-items:center; gap:14px; flex-wrap:wrap; }
+  h1 { font-size:16px; margin:0; font-weight:650; }
+  .tag { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--warn);
+    border:1px solid var(--warn); border-radius:4px; padding:2px 7px; white-space:nowrap; }
+  a { color:var(--accent); }
+  main { display:grid; grid-template-columns:1fr 320px; gap:0; height:calc(100vh - 53px); }
+  @media (max-width:860px){ main { grid-template-columns:1fr; height:auto; } #view { height:60vh; } }
+  #view { position:relative; background:#05070a; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+  canvas:active { cursor:grabbing; }
+  aside { border-left:1px solid var(--line); padding:16px; overflow:auto; background:var(--panel); }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim);
+    margin:18px 0 8px; font-weight:600; }
+  h2:first-child { margin-top:0; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  td { padding:3px 0; border-bottom:1px solid var(--line); }
+  td:last-child { text-align:right; font-family:ui-monospace,Consolas,monospace; color:var(--accent); }
+  .ctl { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  button { font:inherit; padding:7px 13px; border-radius:7px; border:1px solid var(--line);
+    background:#16202b; color:var(--ink); cursor:pointer; }
+  button.on { border-color:var(--accent); color:var(--accent); }
+  input[type=range] { width:100%; }
+  .muted { color:var(--dim); font-size:12px; }
+  .note { background:#12191f; border:1px solid var(--line); border-left:3px solid var(--warn);
+    padding:10px 12px; border-radius:6px; margin:12px 0; font-size:12.5px; color:var(--dim); }
+  #err { padding:20px; color:var(--warn); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Particle Digital Twin</h1>
+  <span class="tag">Recorded playback</span>
+  <span class="muted">Not a live simulation &mdash; stored output of the qualified solver</span>
+  <span style="margin-left:auto"><a href="about.html">About &amp; compatibility</a></span>
+</header>
+
+<main>
+  <div id="view"><canvas id="c"></canvas></div>
+  <aside>
+    <h2>Playback</h2>
+    <div class="ctl">
+      <button id="play" class="on">Pause</button>
+      <button id="rst">Restart</button>
+    </div>
+    <!-- max is set from the data after load; the markup value is a placeholder and
+         must not be read as the frame count. -->
+    <input type="range" id="scrub" min="0" max="1" value="0" step="1" disabled>
+    <table>
+      <tr><td>time</td><td id="v-t">0.000 s</td></tr>
+      <tr><td>frame</td><td id="v-f">0 / 600</td></tr>
+      <tr><td>position</td><td id="v-p">-</td></tr>
+      <tr><td>displacement</td><td id="v-d">-</td></tr>
+      <tr><td>body rate |&omega;|</td><td id="v-w">-</td></tr>
+      <tr><td>force |F|</td><td id="v-F">-</td></tr>
+    </table>
+
+    <h2>View</h2>
+    <div class="ctl">
+      <button id="trc" class="on">Tracer field</button>
+      <button id="axs" class="on">Body axes</button>
+    </div>
+    <div class="ctl">
+      <span class="muted">Motion scale</span>
+      <button data-ex="1" class="ex on">&times;1</button>
+      <button data-ex="20" class="ex">&times;20</button>
+      <button data-ex="100" class="ex">&times;100</button>
+    </div>
+    <p class="muted">Drag to orbit, scroll to zoom.</p>
+    <div class="note" id="exnote">Motion scale is &times;1 &mdash; true recorded displacement.</div>
+
+    <h2>What this is</h2>
+    <p class="muted">A recorded run of the same solver the full version computes live. Positions,
+      orientations, forces and the tracer field are read from stored data and replayed. Nothing here
+      is re-simulated or approximated in your browser.</p>
+
+    <h2>Not available here</h2>
+    <p class="muted">Live GPU solving, POINT&nbsp;/&nbsp;NEURAL comparison, live tracer advection and
+      hand-gesture control all require a WebGPU device. See
+      <a href="about.html">About &amp; compatibility</a>.</p>
+
+    <h2>Provenance</h2>
+    <table id="prov"></table>
+  </aside>
+</main>
+
+<div id="err" hidden></div>
+
+<script>
+/* ===========================================================================
+   LEVEL C - precomputed playback.
+
+   HONESTY RULES THIS FILE FOLLOWS
+     - It replays RECORDED solver output. It does not integrate anything, does
+       not re-implement the physics, and never presents itself as live.
+     - The recorded particle motion is genuinely tiny (about 0.039 over 10 s in
+       x for the spin case). Rather than silently zooming to make it look
+       dramatic, the motion scale is x1 by default and any exaggeration is shown
+       as an explicit, labelled multiplier.
+     - Canvas 2D, not WebGL2: the data is precomputed so no GPU is needed, and
+       2D canvas works on strictly more devices than WebGL2 - which is the whole
+       point of this tier.
+   ======================================================================== */
+
+var TARGET = [5, 5, 5];           // domain is 10^3, particle sits near the centre
+var MACRO  = [0, 0, 1];           // U_macro from the manifest
+
+var traj = null, tracers = null, prov = null;
+var frame = 0, playing = true, exagg = 1, showTracers = true, showAxes = true;
+var az = 0.6, elev = 0.25, dist = 14;
+var cv = document.getElementById('c'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1;
+
+function fail(msg) {
+  document.querySelector('main').style.display = 'none';
+  var e = document.getElementById('err');
+  e.hidden = false;
+  e.innerHTML = '<p>' + msg + '</p><p class="muted">The description and compatibility notes are still available: ' +
+                '<a href="about.html">About &amp; compatibility</a>.</p>';
+}
+
+function parseCSV(text) {
+  var lines = text.trim().split(/\r?\n/);
+  var head = lines[0].split(',');
+  var out = [];
+  for (var i = 1; i < lines.length; i++) {
+    var p = lines[i].split(','), o = {};
+    for (var j = 0; j < head.length; j++) o[head[j]] = parseFloat(p[j]);
+    out.push(o);
+  }
+  return out;
+}
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var r = cv.parentNode.getBoundingClientRect();
+  W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+function project(p) {
+  var dx = p[0] - TARGET[0], dy = p[1] - TARGET[1], dz = p[2] - TARGET[2];
+  var ca = Math.cos(az), sa = Math.sin(az);
+  var x1 = dx * ca - dz * sa, z1 = dx * sa + dz * ca, y1 = dy;
+  var ce = Math.cos(elev), se = Math.sin(elev);
+  var y2 = y1 * ce - z1 * se, z2 = y1 * se + z1 * ce;
+  var zc = z2 + dist;
+  if (zc < 0.2) return null;
+  var f = (Math.min(W, H) * 0.9) / zc;
+  return [W / 2 + x1 * f, H / 2 - y2 * f, zc];
+}
+
+function quatToAxes(qw, qx, qy, qz) {
+  return [
+    [1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy + qz * qw),     2 * (qx * qz - qy * qw)],
+    [2 * (qx * qy - qz * qw),     1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz + qx * qw)],
+    [2 * (qx * qz + qy * qw),     2 * (qy * qz - qx * qw),     1 - 2 * (qx * qx + qy * qy)]
+  ];
+}
+
+function draw() {
+  if (!traj) return;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#05070a'; ctx.fillRect(0, 0, W, H);
+
+  // domain wireframe, so the viewer can see the box the data lives in
+  var lo = 0, hi = 10, corners = [], i;
+  for (i = 0; i < 8; i++) corners.push([(i & 1) ? hi : lo, (i & 2) ? hi : lo, (i & 4) ? hi : lo]);
+  var edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  ctx.strokeStyle = 'rgba(90,169,230,0.14)'; ctx.lineWidth = 1;
+  for (i = 0; i < edges.length; i++) {
+    var a = project(corners[edges[i][0]]), b = project(corners[edges[i][1]]);
+    if (a && b) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  }
+
+  if (showTracers && tracers) {
+    for (i = 0; i < tracers.length; i++) {
+      var t = tracers[i];
+      var p0 = [t.x, t.y, t.z];
+      var p1 = [t.x + t.ux * 0.45, t.y + t.uy * 0.45, t.z + t.uz * 0.45];
+      var A = project(p0), B = project(p1);
+      if (!A || !B) continue;
+      var dux = t.ux - MACRO[0], duy = t.uy - MACRO[1], duz = t.uz - MACRO[2];
+      var dev = Math.sqrt(dux * dux + duy * duy + duz * duz);
+      var a2 = Math.min(1, 0.10 + dev * 4.0);
+      ctx.strokeStyle = dev > 0.02 ? 'rgba(224,164,88,' + a2.toFixed(3) + ')'
+                                   : 'rgba(150,185,215,' + (a2 * 0.55).toFixed(3) + ')';
+      ctx.lineWidth = dev > 0.02 ? 1.4 : 0.8;
+      ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+    }
+  }
+
+  var f = traj[frame];
+  var base = traj[0];
+  var px = base.x + (f.x - base.x) * exagg;
+  var py = base.y + (f.y - base.y) * exagg;
+  var pz = base.z + (f.z - base.z) * exagg;
+  var P = project([px, py, pz]);
+  if (P) {
+    var rad = Math.max(6, (Math.min(W, H) * 0.9) / P[2] * 0.5);
+    var g = ctx.createRadialGradient(P[0] - rad * 0.3, P[1] - rad * 0.3, rad * 0.1, P[0], P[1], rad);
+    g.addColorStop(0, '#dfe9f2'); g.addColorStop(1, '#7c8b99');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(P[0], P[1], rad, 0, Math.PI * 2); ctx.fill();
+
+    if (showAxes) {
+      var M = quatToAxes(f.qw, f.qx, f.qy, f.qz);
+      var cols = ['#e05a5a', '#5ae07a', '#5a9ae0'];
+      for (i = 0; i < 3; i++) {
+        var e2 = project([px + M[i][0] * 0.9, py + M[i][1] * 0.9, pz + M[i][2] * 0.9]);
+        if (!e2) continue;
+        ctx.strokeStyle = cols[i]; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
+      }
+    }
+  }
+
+  var dxs = f.x - base.x, dys = f.y - base.y, dzs = f.z - base.z;
+  var disp = Math.sqrt(dxs * dxs + dys * dys + dzs * dzs);
+  var w = Math.sqrt(f.wbx * f.wbx + f.wby * f.wby + f.wbz * f.wbz);
+  var F = Math.sqrt(f.Fx * f.Fx + f.Fy * f.Fy + f.Fz * f.Fz);
+  document.getElementById('v-t').textContent = f.t.toFixed(3) + ' s';
+  document.getElementById('v-f').textContent = frame + ' / ' + (traj.length - 1);
+  document.getElementById('v-p').textContent = f.x.toFixed(4) + ', ' + f.y.toFixed(4) + ', ' + f.z.toFixed(4);
+  document.getElementById('v-d').textContent = disp.toExponential(2);
+  document.getElementById('v-w').textContent = w.toFixed(4);
+  document.getElementById('v-F').textContent = F.toFixed(4);
+  document.getElementById('scrub').value = frame;
+}
+
+var last = 0, acc = 0;
+function loop(ts) {
+  if (!last) last = ts;
+  var dt = (ts - last) / 1000; last = ts;
+  if (playing && traj) {
+    acc += dt;
+    while (acc >= 1 / 60) { acc -= 1 / 60; frame = (frame + 1) % traj.length; }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ---- interaction -----------------------------------------------------------
+var drag = false, lx = 0, ly = 0;
+cv.addEventListener('pointerdown', function (e) { drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointerup',   function (e) { drag = false; });
+cv.addEventListener('pointermove', function (e) {
+  if (!drag) return;
+  az += (e.clientX - lx) * 0.008;
+  elev = Math.max(-1.4, Math.min(1.4, elev + (e.clientY - ly) * 0.006));
+  lx = e.clientX; ly = e.clientY;
+});
+cv.addEventListener('wheel', function (e) {
+  e.preventDefault();
+  dist = Math.max(3, Math.min(40, dist * (1 + Math.sign(e.deltaY) * 0.12)));
+}, { passive: false });
+
+document.getElementById('play').addEventListener('click', function () {
+  playing = !playing; this.textContent = playing ? 'Pause' : 'Play'; this.classList.toggle('on', playing);
+});
+document.getElementById('rst').addEventListener('click', function () { frame = 0; });
+document.getElementById('scrub').addEventListener('input', function () { frame = parseInt(this.value, 10); playing = false;
+  var b = document.getElementById('play'); b.textContent = 'Play'; b.classList.remove('on'); });
+document.getElementById('trc').addEventListener('click', function () { showTracers = !showTracers; this.classList.toggle('on', showTracers); });
+document.getElementById('axs').addEventListener('click', function () { showAxes = !showAxes; this.classList.toggle('on', showAxes); });
+Array.prototype.forEach.call(document.querySelectorAll('.ex'), function (b) {
+  b.addEventListener('click', function () {
+    exagg = parseFloat(this.dataset.ex);
+    Array.prototype.forEach.call(document.querySelectorAll('.ex'), function (o) { o.classList.remove('on'); });
+    this.classList.add('on');
+    document.getElementById('exnote').textContent = exagg === 1
+      ? 'Motion scale is ×1 — true recorded displacement.'
+      : 'Motion scale is ×' + exagg + ' — displacement is EXAGGERATED for visibility. ' +
+        'Orientation, forces and the tracer field are unchanged and remain true.';
+  });
+});
+
+// ---- load ------------------------------------------------------------------
+Promise.all([
+  fetch('data/spin_trajectory.csv').then(function (r) { if (!r.ok) throw new Error('spin_trajectory.csv ' + r.status); return r.text(); }),
+  fetch('data/tracer_field.csv').then(function (r) { if (!r.ok) throw new Error('tracer_field.csv ' + r.status); return r.text(); }),
+  fetch('data/manifest.json').then(function (r) { if (!r.ok) throw new Error('manifest.json ' + r.status); return r.json(); })
+]).then(function (res) {
+  traj = parseCSV(res[0]); tracers = parseCSV(res[1]); prov = res[2];
+  if (!traj.length || !tracers.length) { fail('The recorded data loaded but contained no rows.'); return; }
+  var scrub = document.getElementById('scrub');
+  scrub.max = traj.length - 1;
+  scrub.disabled = false;
+  var rg = prov.regime || {};
+  document.getElementById('prov').innerHTML =
+    '<tr><td>generated</td><td>' + (prov.generated || '-').slice(0, 10) + '</td></tr>' +
+    '<tr><td>seed</td><td>' + (prov.seed != null ? prov.seed : '-') + '</td></tr>' +
+    '<tr><td>frames</td><td>' + traj.length + '</td></tr>' +
+    '<tr><td>tracers</td><td>' + tracers.length + '</td></tr>' +
+    '<tr><td>&nu;</td><td>' + rg.nu + '</td></tr>' +
+    '<tr><td>&rho;<sub>p</sub>/&rho;<sub>f</sub></td><td>' + (rg.rho_p / rg.rho_f).toFixed(1) + '</td></tr>' +
+    '<tr><td>U<sub>macro</sub></td><td>' + (rg.U_macro || []).join(', ') + '</td></tr>' +
+    '<tr><td>quadrature</td><td>' + ((prov.quadrature || {}).rule || '-') + '</td></tr>';
+  resize();
+  requestAnimationFrame(loop);
+}).catch(function (e) {
+  fail('The recorded data could not be loaded (' + e.message + ').');
+});
+</script>
+</body>
+</html>
