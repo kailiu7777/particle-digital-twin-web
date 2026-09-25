@@ -280,8 +280,8 @@
     precise location are stored.</p>
 </div>
 <script>
-var PDT_ROUTER_VERSION = 'p28d2c-optd-ui11-0499a96';
-var LC_RELEASE = 'ml-opt-d-ui11-0499a96';
+var PDT_ROUTER_VERSION = 'p28d2c-optd-ui12-0499a96';
+var LC_RELEASE = 'ml-opt-d-ui12-0499a96';
 var LC_BUILD = 'live/' + LC_RELEASE + '/Build/';
 // Aggregate-only usage counters. Empty string = analytics disabled, which is the state
 // shipped until the Worker is deployed. Setting this to the Worker URL is the only change
@@ -604,9 +604,14 @@ function setTheme(t) { try { localStorage.setItem('pdt-theme', t); } catch (e) {
 // The single toggle entry point: touch/click and the left-hand pinch both call this, so
 // one gesture is always exactly one transition through the authoritative applyTheme path.
 function toggleTheme() { setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }function showExitPanel(on) { el('lc-exit').classList.toggle('on', !!on); }function closePage() {
+  // hand.mod.stop() stops every MediaStream track and clears the video source, so the camera
+  // indicator goes out here rather than whenever the page is eventually discarded.
   try { if (hand.mod) hand.mod.stop(); } catch (e) {}
   try { if (unityInst && unityInst.Quit) unityInst.Quit(); } catch (e) {}
-  try { window.close(); } catch (e) {}
+  // Deliberately NO window.close(). Desktop refuses it for a context the script did not open,
+  // which is why this survived QA, but the iPhone allows it for a context opened from the QR -
+  // so the browsing context closed before the timer below could render the finished page and
+  // the visitor was dropped back onto the page underneath. Exit stays inside this page.
   setTimeout(function () {
     document.body.classList.remove('live', 'portrait', 'landscape');
     ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit'].forEach(function (id) { el(id).classList.remove('on'); });
@@ -615,7 +620,7 @@ function toggleTheme() { setTheme(document.documentElement.getAttribute('data-th
     el('ui').style.display = '';
     say('Simulation finished');
     setBar(1);
-    el('body').innerHTML = '<div class="card"><p>The camera and the simulation are off. You can close this tab now.</p>' +
+    el('body').innerHTML = '<div class="card"><p>The camera and the simulation are off.</p>' +
       '<div class="row"><button class="primary" onclick="location.reload()">Start again</button></div></div>' +
       '<p class="muted" style="margin-top:30px">Thanks for exploring.</p>' +
       '<p class="muted" style="margin-top:14px;line-height:1.7">Created by<br>' +
