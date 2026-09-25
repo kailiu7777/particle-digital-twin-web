@@ -12,16 +12,16 @@ It is a simple demonstration for trial, not the qualified desktop application, a
 
 - Drag empty space to orbit, pinch to zoom, drag a particle to move it.
 - **+** spawns a particle at a held touch, **−** deletes half, **?** opens the gesture board.
-- The sun/moon switch beside the close button chooses a light or dark interface; the choice is remembered on that device. The simulation viewport stays dark in both, because tracer and slice shading carry physical meaning that a light background would obscure.
+- The appearance button beside the close button switches the whole demo between light and dark, viewport included; it shows the current state, sun for light and moon for dark, and the choice is remembered on that device. Light is the default. Tracer and slice shading stay intensity-based in both, so nothing about the physics reading changes with the appearance.
 - With the front camera enabled: right hand OK-pinch grabs, thumb–middle pinch spawns, snap removes half; left hand OK-pinch orbits and zooms, point up or down spins the held particle. Camera frames never leave the device.
 - The control sheet selects the model (POINT / NEURAL), the wake solver, tracers (OFF / NEAR / SELECTED), six axis-aligned views, the particle limit (8 / 16 / 32) and the slice plane.
-- Closing with the × first offers a short optional "Any issues?" check. Nothing has to be selected; one tap on Exit always leaves.
+- Closing with the × asks to confirm: Exit stops the simulation and the camera, Back returns to it.
 
 Needs WebGL2 (any current iPhone, Android or desktop browser). Browsers without it get a recorded playback.
 
 ## Privacy
 
-Anonymous aggregate usage and optional exit-issue counts help improve this demo. No cookies, persistent identifiers, camera frames, hand data, or precise location are stored.
+Anonymous visit counts help us understand use of this demo. No cookies, persistent identifiers, camera frames, hand data, comments, or precise location are stored.
 
 ## What is in this repository
 

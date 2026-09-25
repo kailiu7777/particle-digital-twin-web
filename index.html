@@ -7,7 +7,9 @@
 <meta name="theme-color" content="#15161C">
 <script>
 (function () {
-  var t = 'dark';
+  // Default LIGHT for a visitor with no stored preference. A stored value always wins,
+  // so nobody's existing choice is overwritten by the change of default.
+  var t = 'light';
   try { var s = localStorage.getItem('pdt-theme'); if (s === 'light' || s === 'dark') { t = s; } } catch (e) {}
   document.documentElement.setAttribute('data-theme', t);
   var m = document.querySelector('meta[name=theme-color]');
@@ -23,8 +25,7 @@
     --line-soft: rgba(243,241,236,.15); --line-strong: rgba(243,241,236,.40);
     --surface: rgba(243,241,236,.025); --surface-hover: rgba(243,241,236,.055);
     --modal-bg: rgba(21,22,28,.95); --sheet-bg: rgba(21,22,28,.88); --ctl-bg: rgba(21,22,28,.82);
-    --viewport-bg: #15161C;
-    --on-canvas-fg: rgba(243,241,236,.96); --on-canvas-dim: rgba(243,241,236,.58);
+    /* The viewport inverts with the interface, so it simply follows --bg. */
     --panel: var(--surface); --line: var(--line-soft); --line2: var(--line-strong);
     --ink: var(--fg-strong); --dim: var(--fg-dim);
     --accent: var(--fg); --warn: var(--fg); --bad: var(--fg); --ok: var(--fg);
@@ -45,9 +46,9 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
     font: 15px/1.55 -apple-system, "Segoe UI", "Helvetica Neue", Roboto, Helvetica, Arial, sans-serif; }
-  #stage { position: fixed; inset: 0; display: none; background: var(--viewport-bg); }
+  #stage { position: fixed; inset: 0; display: none; background: var(--bg); }
   #stage.on { display: block; }
-  #unity-canvas { width: 100%; height: 100%; display: block; background: var(--viewport-bg); }
+  #unity-canvas { width: 100%; height: 100%; display: block; background: var(--bg); }
   .wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 72px; }
   h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
   h2 { font-size: 17px; margin: 34px 0 10px; }
@@ -79,9 +80,9 @@
   #lc-load .bar { width: min(320px, 70vw); }
   #lc-title { position: fixed; z-index: 6; display: none; pointer-events: none;
     left: calc(var(--sl) + 14px); top: calc(var(--st) + 12px); font: 11px/1.5 var(--mono);
-    letter-spacing: .10em; text-transform: uppercase; color: var(--on-canvas-dim); }
+    letter-spacing: .10em; text-transform: uppercase; color: var(--dim); }
   #lc-title.on { display: block; }
-  #lc-title b { color: var(--on-canvas-fg); font-weight: 500; }
+  #lc-title b { color: var(--ink); font-weight: 500; }
   #lc-status { color: var(--dim); }
   #lc-sheet { position: fixed; z-index: 7; display: none; background: var(--sheet-bg);
     border: 1px solid var(--line2); color: var(--ink); overflow: hidden; }
@@ -148,15 +149,12 @@
     width: 34px; height: 34px; border-radius: 17px; padding: 0; font-size: 18px; line-height: 1; font-weight: 300;
     background: var(--ctl-bg); border: 1px solid var(--line2); color: var(--ink); -webkit-tap-highlight-color: transparent; }
   #lc-close.on { display: block; }
-  #lc-theme { position: fixed; z-index: 11; display: none; top: calc(var(--st) + 6px); right: calc(var(--sr) + 50px);
-    height: 34px; border: 1px solid var(--line2); border-radius: 17px; overflow: hidden; background: var(--ctl-bg); }
-  #lc-theme.on { display: flex; }
-  #lc-theme button { width: 42px; height: 100%; min-height: 0; padding: 0; margin: 0; border: 0; border-radius: 0;
-    background: transparent; color: var(--dim); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  #lc-theme button + button { border-left: 1px solid var(--line2); }
-  #lc-theme button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
-  #lc-theme svg { display: block; }
+  /* One more control in the existing lower-left stack: same 54px circle, alignment, gap,
+     border language and safe-area treatment as + - ?. Exactly one glyph, showing the CURRENT
+     appearance (moon = dark, sun = light). The stack's buttons carry font-size/line-height for
+     their text glyphs, so this one centres its SVG explicitly. */
+  #lc-spin #lc-theme { display: flex; align-items: center; justify-content: center; font-size: 0; line-height: 0; }
+  #lc-spin #lc-theme svg { display: block; width: 23px; height: 23px; }
   .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   body.live.landscape #lc-sheet { top: calc(var(--st) + 48px); }
   #lc-cam { position: fixed; z-index: 9; display: none; left: 50%; transform: translateX(-50%);
@@ -171,20 +169,17 @@
   #lc-toast.on { display: block; }
   #lc-exit { position: fixed; z-index: 12; display: none; left: 50%; transform: translateX(-50%);
     top: calc(var(--st) + 44px); width: min(340px, calc(100vw - 24px)); background: var(--modal-bg);
-    border: 1px solid var(--line-strong); border-radius: 2px; padding: 14px 16px 12px; }
+    border: 1px solid var(--line-strong); border-radius: 2px; padding: 12px; }
   #lc-exit.on { display: block; }
-  #lc-exit .t { font-weight: 600; color: var(--fg-strong); }
-  #lc-exit .s { margin-top: 4px; font: 11px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-dim); }
-  #lc-exit .opt { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; color: var(--fg-strong); cursor: pointer; }
-  #lc-exit .opt input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--fg); }
   #lc-exit .row { margin-top: 10px; }
+  #lc-exit .row:first-child { margin-top: 0; }
   #lc-exit .row button { width: 100%; }
   .hc { position: fixed; z-index: 8; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; border-radius: 9px;
-    border: 1.5px solid rgba(243,241,236,.95); pointer-events: none; display: none; left: 0; top: 0; }
+    border: 1.5px solid var(--fg); pointer-events: none; display: none; left: 0; top: 0; }
   .hc.l { border-style: dashed; }
-  .hc.pinch { background: rgba(243,241,236,.35); }
-  .hc.grab { background: rgba(243,241,236,.9); }
-  .hc.orbit { background: rgba(243,241,236,.55); }
+  .hc.pinch { background: color-mix(in srgb, var(--fg) 35%, transparent); }
+  .hc.grab { background: color-mix(in srgb, var(--fg) 90%, transparent); }
+  .hc.orbit { background: color-mix(in srgb, var(--fg) 55%, transparent); }
 </style>
 </head>
 <body>
@@ -193,11 +188,9 @@
   <div class="muted" id="lc-load-msg" style="font: 11px/1.5 var(--mono); letter-spacing:.08em">Loading the live simulation&#8230;</div>
   <div class="bar"><i id="lc-bar"></i></div></div>
 <div id="lc-title"><b>Compositional AI Digital Twin</b> &nbsp;/&nbsp; live<br><span id="lc-status"></span></div>
-<div id="lc-theme" role="group" aria-label="Appearance">
-  <button id="lc-theme-light" aria-pressed="false"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.6 12H2.4M21.6 12h-2.2M6.4 6.4 4.8 4.8M19.2 19.2l-1.6-1.6M17.6 6.4l1.6-1.6M4.8 19.2l1.6-1.6"/></svg><span class="vh">Light appearance</span></button>
-  <button id="lc-theme-dark" aria-pressed="true"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4.2a7.8 7.8 0 0 0 0 15.6z" fill="currentColor"/></svg><span class="vh">Dark appearance</span></button>
-</div><button id="lc-close" aria-label="close">&#10005;</button>
+<button id="lc-close" aria-label="close">&#10005;</button>
 <div id="lc-spin">
+  <button id="lc-theme" type="button" data-ui="5" aria-label="Dark appearance" title="Tap to change appearance"></button>
   <button id="lc-add" data-ui="0" aria-label="add a particle">+</button>
   <button id="lc-del" data-ui="1" aria-label="remove half of the particles">&minus;</button>
   <button id="lc-help" data-ui="4" aria-label="gesture guide">?</button></div>
@@ -227,14 +220,10 @@
     device. Touch always keeps working.</div>
   <div class="row"><button class="primary" id="lc-cam-yes">Enable camera</button><button id="lc-cam-no">Touch only</button></div>
 </div>
-<div id="lc-exit" role="dialog" aria-modal="true" aria-labelledby="lc-exit-t">
-  <div class="t" id="lc-exit-t">Any issues?</div>
-  <div class="s">Select any.</div>
-  <label class="opt"><input type="checkbox" data-issue="flow_unclear">Flow unclear</label>
-  <label class="opt"><input type="checkbox" data-issue="performance">Feels slow</label>
-  <label class="opt"><input type="checkbox" data-issue="gestures">Gestures unreliable</label>
-  <label class="opt"><input type="checkbox" data-issue="usefulness">Not useful to me</label>
+<!-- Confirmation only. No title, no fields: pressing X must never ask the visitor for anything. -->
+<div id="lc-exit" role="dialog" aria-modal="true" aria-label="Exit the simulation?">
   <div class="row"><button class="primary" id="lc-exit-go">Exit</button></div>
+  <div class="row"><button id="lc-exit-back">Back</button></div>
 </div><div id="lc-toast"></div>
 <div id="lc-lost" class="card" style="position:fixed;z-index:12;display:none;left:50%;top:40%;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 24px))">
   <div style="font-weight:600">The graphics context was lost</div>
@@ -286,13 +275,13 @@
       </div>
     </div>
   </noscript>
-  <p class="muted" style="margin-top:28px; font-size:12.5px">Anonymous aggregate usage and optional
-    exit-issue counts help improve this demo. No cookies, persistent identifiers, camera frames,
-    hand data or precise location are collected.</p>
+  <p class="muted" style="margin-top:28px; font-size:12.5px">Anonymous visit counts help us understand
+    use of this demo. No cookies, persistent identifiers, camera frames, hand data, comments, or
+    precise location are stored.</p>
 </div>
 <script>
-var PDT_ROUTER_VERSION = 'p28d2c-optd-ui4-32c5587';
-var LC_RELEASE = 'ml-opt-d-ui4-32c5587';
+var PDT_ROUTER_VERSION = 'p28d2c-optd-ui11-0499a96';
+var LC_RELEASE = 'ml-opt-d-ui11-0499a96';
 var LC_BUILD = 'live/' + LC_RELEASE + '/Build/';
 // Aggregate-only usage counters. Empty string = analytics disabled, which is the state
 // shipped until the Worker is deployed. Setting this to the Worker URL is the only change
@@ -430,7 +419,7 @@ function startFull() {
 var diag = { errors: 0, contextLost: 0, fatal: null, unity: null, dprCap: 1.25,
              frames: [], startedAt: 0, readyAt: 0, orientChanges: 0 };
 var hand = { mod: null, starting: false, on: false, hz: 12, longSide: 480, result: null, asked: false };
-var HAND_ASSETS = 'live/ml-edfce09-pages/handtracking/';
+var HAND_ASSETS = 'live/' + LC_RELEASE + '/handtracking/';
 var HAND_SUFFIX = '';
 var HAND_MODULE = 'live/' + LC_RELEASE + '/lite-hand-tracker.js';
 function orientationNow() {
@@ -553,13 +542,14 @@ window.__liteOnEvent = function (ev) {
   var p = String(ev).split(':');
   if (p[0] === 'spawn' && p[1] !== 'Ok') toast('No new particle: ' + (SPAWN_WHY[p[1]] || p[1]), 2200);
   if (p[0] === 'uipress') {
+    if (p[1] === '5') { if (p[2] === '1') { flash(el('lc-theme')); toggleTheme(); } return; }   // left-pinch appearance
     if (p[1] === '4') { if (p[2] === '1') showGuide(!el('lc-guide').classList.contains('on')); return; }
     var b = document.querySelector('#lc-spin button[data-ui="' + p[1] + '"]');
     if (b) { if (p[2] === '1') flash(b); else b.classList.remove('active'); }
   }
 };
 // Fire-and-forget. Never awaited, never retried, never surfaced: a failure here must not
-// block Exit, block startup, show anything to the visitor, or touch the simulation.
+// block startup, show anything to the visitor, or touch the simulation.
 function pdtSend(payload) {
   if (!PDT_ANALYTICS_URL) { return; }
   try {
@@ -573,11 +563,9 @@ function pdtSend(payload) {
     }).then(function () {}, function () {});
   } catch (e) {}
 }
-// The exit panel builds a richer local event; the aggregate service is only allowed the
-// release and the issue codes, so everything else is dropped here rather than transmitted.
-window.pdtAnalyticsSink = function (ev) {
-  try { pdtSend({ type: 'exit_feedback', release: ev.release, issues: ev.issues || [] }); } catch (e) {}
-};
+// `visit` is the only event this page can produce. There is no exit event, no feedback, no
+// duration, no hand usage and no particle count: the call below is the entire analytics
+// surface of the demo.
 var pdtVisitSent = false;
 function pdtVisit() {
   if (pdtVisitSent) { return; }
@@ -585,56 +573,54 @@ function pdtVisit() {
   pdtSend({ type: 'visit', release: LC_RELEASE });
 }function themePref() {
   try { var t = localStorage.getItem('pdt-theme'); if (t === 'light' || t === 'dark') { return t; } } catch (e) {}
-  return 'dark';
+  return 'light';   // default appearance
 }
+// One user action flips everything: document, Safari chrome, panels, controls, and the
+// simulation viewport. Unity gets the same appearance through the existing command path; if
+// it is not ready yet the choice is cached and sent the moment PdtLite reports READY, so a
+// restored light preference never shows a light shell over a dark viewport.
+// The appearance control shows the CURRENT state: moon while dark, sun while light.
+var THEME_ICON = {
+  dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.3 14.3A8.6 8.6 0 0 1 9.7 3.7a8.6 8.6 0 1 0 10.6 10.6z"/></svg>',
+  light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 3.1v2.1M12 18.8v2.1M3.1 12h2.1M18.8 12h2.1M6.05 6.05l1.5 1.5M16.45 16.45l1.5 1.5M17.95 6.05l-1.5 1.5M6.05 17.95l1.5-1.5"/></svg>'
+};
+var themePending = null;
+// ONE authoritative update: state, DOM, meta, Unity, icon+label. Nothing else writes any of
+// these, so the glyph and the actual appearance cannot drift apart.
 function applyTheme(t) {
   t = (t === 'light') ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t);
   var m = document.querySelector('meta[name=theme-color]');
   if (m) { m.setAttribute('content', t === 'light' ? '#F3F1EC' : '#15161C'); }
-  var L = document.getElementById('lc-theme-light'), D = document.getElementById('lc-theme-dark');
-  if (L && D) { L.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
-                D.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false'); }
+  var b = document.getElementById('lc-theme');
+  if (b) {
+    b.innerHTML = THEME_ICON[t];
+    b.setAttribute('aria-label', t === 'dark' ? 'Dark appearance' : 'Light appearance');
+  }
+  if (unityInst) { lcSend('theme:' + t); themePending = null; } else { themePending = t; }
 }
-function setTheme(t) { try { localStorage.setItem('pdt-theme', t); } catch (e) {} applyTheme(t); }var exitInfo = { handUsed: false, maxNp: 0 };
-setInterval(function () {
-  try { if (hand && hand.on) exitInfo.handUsed = true; } catch (e) {}
-  try { var u = diag.unity; if (u && u.maxNp) exitInfo.maxNp = Math.max(exitInfo.maxNp, u.maxNp); } catch (e) {}
-}, 2000);
-function exitDurationBucket(ms) {
-  var s = ms / 1000;
-  if (s < 30) return 'lt_30s';
-  if (s < 60) return '30s_1m';
-  if (s < 180) return '1m_3m';
-  if (s < 600) return '3m_10m';
-  return 'gt_10m';
-}
-window.__pdtExitEvents = [];
-function recordExitFeedback(issues) {
-  var ev = { type: 'exit_feedback', release: LC_RELEASE,
-             sessionDurationBucket: exitDurationBucket(performance.now() - (diag.startedAt || 0)),
-             handControlUsed: !!exitInfo.handUsed,
-             maxParticleSetting: exitInfo.maxNp || null,
-             issues: issues };
-  window.__pdtExitEvents.push(ev);
-  try { console.log('[EXIT-FEEDBACK] ' + JSON.stringify(ev)); } catch (e) {}
-  try { if (typeof window.pdtAnalyticsSink === 'function') window.pdtAnalyticsSink(ev); } catch (e) {}
-  return ev;
-}
-function showExitPanel(on) { el('lc-exit').classList.toggle('on', !!on); }function closePage() {
+function themeOnReady() { if (themePending) { lcSend('theme:' + themePending); themePending = null; } }
+function setTheme(t) { try { localStorage.setItem('pdt-theme', t); } catch (e) {} applyTheme(t); }
+// The single toggle entry point: touch/click and the left-hand pinch both call this, so
+// one gesture is always exactly one transition through the authoritative applyTheme path.
+function toggleTheme() { setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }function showExitPanel(on) { el('lc-exit').classList.toggle('on', !!on); }function closePage() {
   try { if (hand.mod) hand.mod.stop(); } catch (e) {}
   try { if (unityInst && unityInst.Quit) unityInst.Quit(); } catch (e) {}
   try { window.close(); } catch (e) {}
   setTimeout(function () {
     document.body.classList.remove('live', 'portrait', 'landscape');
-    ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
+    ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit'].forEach(function (id) { el(id).classList.remove('on'); });
     ['hc-r', 'hc-l'].forEach(function (id) { var c = el('lc-' + id); if (c) c.style.display = 'none'; });
     try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
     el('ui').style.display = '';
-    say('The simulation has stopped.');
+    say('Simulation finished');
     setBar(1);
     el('body').innerHTML = '<div class="card"><p>The camera and the simulation are off. You can close this tab now.</p>' +
-      '<div class="row"><button class="primary" onclick="location.reload()">Start again</button></div></div>';
+      '<div class="row"><button class="primary" onclick="location.reload()">Start again</button></div></div>' +
+      '<p class="muted" style="margin-top:30px">Thanks for exploring.</p>' +
+      '<p class="muted" style="margin-top:14px;line-height:1.7">Created by<br>' +
+      'Kai Liu &middot; Haochen Li &middot; S. Balachandar<br>' +
+      'University of Tennessee, Knoxville &middot; University of Florida</p>';
   }, 300);
 }
 function liveReady() {
@@ -679,19 +665,18 @@ function liveReady() {
   requestAnimationFrame(sendUiRects);
   setTimeout(sendUiRects, 500);
   el('lc-close').classList.add('on');
-  el('lc-theme').classList.add('on');
-  el('lc-theme-light').addEventListener('click', function () { setTheme('light'); });
-  el('lc-theme-dark').addEventListener('click', function () { setTheme('dark'); });
+  // Same path as + - ?: pointerdown, not click. These controls float above the Unity canvas,
+  // which is why tapPad exists. stopPropagation keeps the tap from reaching the canvas, so it
+  // can never spawn, grab or orbit. One pointerdown = exactly one transition.
+  tapPad(el('lc-theme'), toggleTheme);
+  el('lc-theme').addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  el('lc-theme').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+  themeOnReady();
   el('lc-close').addEventListener('click', function () { showExitPanel(true); });
-  el('lc-exit-go').addEventListener('click', function () {
-    var issues = [];
-    Array.prototype.forEach.call(el('lc-exit').querySelectorAll('input[type=checkbox]'), function (c) {
-      if (c.checked) { issues.push(c.getAttribute('data-issue')); }
-    });
-    recordExitFeedback(issues);
-    showExitPanel(false);
-    closePage();
-  });
+  // Back: return to the running simulation. Records nothing and stops nothing.
+  el('lc-exit-back').addEventListener('click', function () { showExitPanel(false); });
+  // Exit: the existing cleanup path and the final page. Records nothing either.
+  el('lc-exit-go').addEventListener('click', function () { showExitPanel(false); closePage(); });
   el('lc-cam-yes').addEventListener('click', function () { el('lc-cam').classList.remove('on'); setHand(true); });
   el('lc-cam-no').addEventListener('click', function () { el('lc-cam').classList.remove('on'); hand.asked = true; setHand(false); toast('Touch control'); });
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) el('lc-cam').classList.add('on');
@@ -813,7 +798,7 @@ function demote(reason) {
   try { if (unityInst && unityInst.Quit) { unityInst.Quit(); } } catch (e) {}
   try { var st = el('stage'); st.classList.remove('on'); st.innerHTML = ''; } catch (e) {}
   document.body.classList.remove('live', 'portrait', 'landscape');
-  ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit', 'lc-theme'].forEach(function (id) { el(id).classList.remove('on'); });
+  ['lc-load', 'lc-sheet', 'lc-title', 'lc-spin', 'lc-cam', 'lc-toast', 'lc-close', 'lc-guide', 'lc-exit'].forEach(function (id) { el(id).classList.remove('on'); });
   el('ui').style.display = '';
   render();
 }
