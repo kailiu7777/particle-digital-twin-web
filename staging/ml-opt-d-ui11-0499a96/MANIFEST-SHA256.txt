@@ -1,0 +1,40 @@
+MOBILE LITE v2 - ui11 STAGING MANIFEST
+STAGING_RELEASE=ml-opt-d-ui11-0499a96    SUPERSEDES=ml-opt-d-ui10-0499a96
+SOURCE_COMMIT=0499a96 (circular tracer billboards) - DOM/Worker-only change, player artifacts byte-identical to ui9/ui10
+UNITY_VERSION=6000.6.0f1  AI_INFERENCE_VERSION=2.6.1  BACKEND=GPUPixel  MSAA=4
+EXIT_PANEL=confirmation only - Exit (primary) / Back. No title, no checkboxes, no text field.
+ANALYTICS=visit only, emitted once when the live simulation reaches READY. Exit and Back record nothing.
+REMOVED=exit_feedback client and Worker paths, issue codes, comment storage, form mode, input diagnostics
+D1=counters table only; comments table dropped; non-visit counters deleted
+FINAL_PAGE=Simulation finished + attribution (Kai Liu, Haochen Li, S. Balachandar)
+PARITY=inherited from ml-opt-d-ui9-0499a96 (identical player artifacts)
+generated=2026-09-25T03:40:34Z
+8e3c1b4b25be44a9ee1120c686ef931fa2daf7b88477b648a7eaa2a14171ede7  fallback/about.html
+7803728deb289e707dac2bb74529b5ae3900a2b9c82e0ae1f3c98ff534ce6657  fallback/data/canonical_frames.csv
+4ffab0762f77ef92ecfb7a746bb4a3e2378149805eb64669d5aa23bc160128b3  fallback/data/manifest.json
+ac276520950325712153f579c76f194b2e7c13ee0ecb01cf398806189ef25364  fallback/data/spin_trajectory.csv
+a526f27f014a81bb1a1eb941b667afaaa8b9f9bd092e0d5f7ea7d825e8a7faa9  fallback/data/surface_loads.csv
+1039ec69b46b46088ec63c544d4561dadd8c0d62ceb52a0461c4f9b02703b402  fallback/data/tracer_field.csv
+64406c916f0628b6a421a00383e010c03eea3c640ac8c5e96dd4e8dfc6dfac06  fallback/index.html
+62bb6935e396d21df9c2c9008414c0faf7c28b199f99f892f745ab76ca94ea68  fallback/media/demo_scene_preview.png
+97afab67d8ca0f789c1cd741dd6419169253b8c86d099c5f11d82cd0fe5ff564  fallback/media/p4_shot9_sliceZ.png
+620b00367ed41ee2ec2ca5b532fcf5abc6efd91c6c25bb2e7a4fe2bf15947031  fallback/media/polish_shot3_full.png
+9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f  full/TemplateData/favicon.ico
+744b91027138b62b02364f6db5db7dc99d2a929049637904ec2a7890fa933371  index.html
+e9db605fa91763bb115f0a9b5e005ee89737826fd9e4c6d792402c9560b05d8e  live/ml-opt-d-ui11-0499a96/Build/pdt-lite.data.unityweb
+b58946fc9026b4512150238a1e76b5ee8371639f3515e077d4a068fecd848d12  live/ml-opt-d-ui11-0499a96/Build/pdt-lite.framework.js.unityweb
+3356bc4e90b46052cc4f6b5274c1b8fbe9f920a593494db589818afc28639954  live/ml-opt-d-ui11-0499a96/Build/pdt-lite.loader.js
+40b55499afcc3bc6dd279426c1b7c0f65cf09e988ff4aa5c97b9d1a9e7f38fe9  live/ml-opt-d-ui11-0499a96/Build/pdt-lite.wasm.unityweb
+14a6cb2e5937c9d308e1a5a6d24f4f5295ff48162f6c4186731301bb30dde8f8  live/ml-opt-d-ui11-0499a96/guide/guide_left_down.jpg
+467a8eaf220d8c00125d4bae5682e8352067f0d20c800cf6a763dcaaa9e2cba3  live/ml-opt-d-ui11-0499a96/guide/guide_left_pinch.jpg
+85e2218ecdde9683670e23b60c270a901223a2e8c0c21493c826fd2bc45af275  live/ml-opt-d-ui11-0499a96/guide/guide_left_up.jpg
+060c3a859925b5da7ab2ecfbabaff7c605ebc4b6d41b8190492e6e8b76b140dc  live/ml-opt-d-ui11-0499a96/guide/guide_right_middle.jpg
+d78908f8ac9cbb4b2ce62818130cac166b10d7056d5fd4f060bcd3330a908025  live/ml-opt-d-ui11-0499a96/guide/guide_right_pinch.jpg
+fe07c92be757ee6db9bccdfadbc0681e68b65a478ef421f32e02eec2ced362c5  live/ml-opt-d-ui11-0499a96/guide/guide_right_snap.jpg
+fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1  live/ml-opt-d-ui11-0499a96/handtracking/models/hand_landmarker.task
+ee13fd64d297605067ae7470f8ce9c9dcc0f2c4abcfd7001533aeb19b25a3483  live/ml-opt-d-ui11-0499a96/handtracking/PROVENANCE.md
+66cae3f8571cbe64d11415b589019ca83e7e3c02a71dce785e59bdb5b1adb8bf  live/ml-opt-d-ui11-0499a96/handtracking/SHA256SUMS
+d885630c297c0b20b1fe86096cb06291c4c8080876f27852e724f24ac603713f  live/ml-opt-d-ui11-0499a96/handtracking/vision_bundle.mjs
+e170ee67dd4e16c1a6fcd8840a206687e5a59b22c20e4a902bc445b095454d73  live/ml-opt-d-ui11-0499a96/handtracking/wasm/vision_wasm_internal.js
+8da277a733926eacd0474b8704b36742d6ec3231c57a860c5b889dff8f1df886  live/ml-opt-d-ui11-0499a96/handtracking/wasm/vision_wasm_internal.wasm
+85462f2d024728ac0bee9bc66baaffa8067196f8103ca14cb157f9ae2a5f234c  live/ml-opt-d-ui11-0499a96/lite-hand-tracker.js
